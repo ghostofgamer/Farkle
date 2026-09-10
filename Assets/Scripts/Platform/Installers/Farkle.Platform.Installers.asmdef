@@ -1,0 +1,22 @@
+{
+    "name": "Farkle.Platform.Installers",
+    "rootNamespace": "Farkle.Platform.Installers",
+    "references": [
+        "Farkle.Platform.Abstractions",
+        "Farkle.Platform.Stub",
+        "Farkle.Platform.Yandex",
+        "Farkle.Platform.VKPlay",
+        "Farkle.Platform.RuStore",
+        "UniTask",
+        "Zenject"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

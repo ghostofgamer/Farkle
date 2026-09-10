@@ -1,0 +1,22 @@
+{
+    "name": "Farkle.Platform.RuStore",
+    "rootNamespace": "Farkle.Platform.RuStore",
+    "references": [
+        "Farkle.Platform.Abstractions",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Android",
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "FARKLE_RUSTORE"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

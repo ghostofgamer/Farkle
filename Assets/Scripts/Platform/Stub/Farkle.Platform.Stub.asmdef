@@ -1,0 +1,17 @@
+{
+    "name": "Farkle.Platform.Stub",
+    "rootNamespace": "Farkle.Platform.Stub",
+    "references": [
+        "Farkle.Platform.Abstractions",
+        "UniTask"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

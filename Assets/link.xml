@@ -1,0 +1,17 @@
+<linker>
+  <!--
+    Защита от IL2CPP-стриппинга (Managed Stripping Level = High).
+    Zenject создаёт объекты через reflection, поэтому конструкторы и типы
+    из наших сборок должны сохраняться целиком. Zenject свой link.xml везёт сам.
+    При добавлении новой сборки с классами, которые биндятся в контейнер, добавить её сюда.
+  -->
+  <assembly fullname="Farkle.Core" preserve="all" />
+  <assembly fullname="Farkle.Game" preserve="all" />
+  <assembly fullname="Farkle.Platform.Abstractions" preserve="all" />
+  <assembly fullname="Farkle.Platform.Stub" preserve="all" />
+  <assembly fullname="Farkle.Platform.Yandex" preserve="all" />
+  <assembly fullname="Farkle.Platform.VKPlay" preserve="all" />
+  <assembly fullname="Farkle.Platform.RuStore" preserve="all" />
+  <assembly fullname="Farkle.Platform.Installers" preserve="all" />
+  <assembly fullname="UniTask" preserve="all" />
+</linker>

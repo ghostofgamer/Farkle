@@ -1,0 +1,22 @@
+{
+    "name": "Farkle.Platform.VKPlay",
+    "rootNamespace": "Farkle.Platform.VKPlay",
+    "references": [
+        "Farkle.Platform.Abstractions",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Editor",
+        "WebGL"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "FARKLE_VKPLAY"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -66,6 +66,7 @@ Assets/
                             PlatformPluginToggler    включает .jslib/.aar только активной площадки
                             PlatformBuildPreprocessor проверка перед любой сборкой, падает при несоответствии
                             BuildScript              меню Farkle/Build и CLI-точки входа, результат в Builds/<площадка>
+                            VKGamesDeployer          меню Farkle/Deploy: выкладка Builds/VKGames на хостинг VK (dev)
                             ProjectContextCreator    меню Farkle/Setup/Create ProjectContext
                             PlatformTestSceneCreator меню Farkle/Setup/Create Platform Test Scene, создаёт Scenes/PlatformTest.unity
                             PlatformTargets          соответствие площадка -> BuildTarget, шаблон, папка плагинов
@@ -82,6 +83,7 @@ Assets/
     SampleScene.unity     остаток шаблона URP
   link.xml                защита сборок Farkle.* и UniTask от стриппинга
 Packages/manifest.json    UniTask (git). Zenject не здесь, а в Assets из Asset Store
+vk-hosting-config.json    выкладка Builds/VKGames на хостинг VK, ID игры
 ```
 
 ## Как переключить площадку
@@ -90,7 +92,10 @@ Packages/manifest.json    UniTask (git). Zenject не здесь, а в Assets �
 1. переключает активный Build Target (WebGL или Android),
 2. ставит define площадки на нужный target и снимает FARKLE_* с остальных,
 3. выставляет WebGL-шаблон (`PROJECT:Yandex` / `PROJECT:VKGames` / `PROJECT:VKPlay`),
-4. включает нативные плагины только этой площадки.
+4. выставляет сжатие WebGL под хостинг площадки (Яндекс: Brotli, остальные: gzip + Decompression Fallback),
+5. включает нативные плагины только этой площадки.
+
+`Farkle/Build` перед WebGL-сборкой удаляет папку `Builds/<площадка>`, чтобы на хостинг не уехали старые файлы.
 
 `Farkle/Platform/Show Current` печатает текущее состояние в консоль.
 
@@ -155,6 +160,9 @@ Unity -batchmode -quit -projectPath . -buildTarget Android -executeMethod Farkle
   Отдельной авторизации нет, игрок VK известен по `vk_user_id`.
 - Аналогов `LoadingAPI.ready` и `GameplayAPI` у VK нет, эти вызовы на VK ничего не делают.
 - Реклама: `VKWebAppShowNativeAds` с `interstitial` и `reward`, для rewarded водопад выключен.
+  `VKWebAppCheckNativeAds` при отсутствии рекламы только запускает загрузку и отвечает false, поэтому мост
+  предзагружает оба формата после инициализации и раз в 30 секунд, а показ вызывает всегда, без проверки.
+  Кнопку rewarded в игре показывать по `IAdsService.IsRewardedAvailable` (на VK это «реклама предзагружена»).
   Событий открытия и закрытия у VK нет, мост отправляет `adOpened`/`adClosed` сам вокруг вызова показа.
   Нельзя показывать рекламу сразу после запуска игры.
 - Хранилище: значение до ~2000 символов, 1000 ключей и **1000 вызовов в час** на пользователя.
@@ -162,6 +170,25 @@ Unity -batchmode -quit -projectPath . -buildTarget Android -executeMethod Farkle
 - **Лидерборды и покупки требуют своего сервера.** Очки сохраняются только серверным `secure.addAppEvent`,
   покупки подтверждаются обратными вызовами VK на сервер игры. Сейчас оба сервиса на VK недоступны (`IsAvailable = false`).
 - Модерация VK: основной язык русский, есть выключение звука, обучение с подсказками, канал поддержки.
+- **Выкладка на хостинг VK.** Загрузки архива через сайт, как у Яндекса, у VK нет: только npm-пакет
+  `@vkontakte/vk-miniapps-deploy`. Лимит 24 выкладки в сутки, архив до 300 МБ.
+  - Для тестов: меню `Farkle/Build/VK Games + Deploy (dev)` собирает и выкладывает одной кнопкой
+    (`VKGamesDeployer`). Выкладывается только режим разработки: без вопросов и без подтверждения на телефоне.
+    Игру видят администраторы, если в «Размещении» стоит галочка «Режим разработки». Готовая сборка
+    выкладывается отдельно через `Farkle/Deploy/VK Games (dev)`.
+  - Вход в VK нужен один раз: `npx @vkontakte/vk-miniapps-deploy` в PowerShell из корня проекта, открыть ссылку.
+    Токен хранится у пользователя (configstore), в проект не попадает. Если Unity сообщит, что нужен вход, повторить.
+  - Прод (перед модерацией) выкладывается вручную той же командой из PowerShell: он требует подтверждения с телефона.
+  - Конфиг `vk-hosting-config.json` в корне хранит ID игры и путь `Builds/VKGames`.
+- **Хостинг VK не отдаёт заголовок `Content-Encoding`** для `.br`/`.gz` (проверено 11.09.2026: `binary/octet-stream`),
+  и сборка с обычным сжатием не загружается («Unable to parse … web server … misconfigured»). Поэтому для VK
+  сжатие gzip с `Decompression Fallback`: загрузчик Unity распаковывает файлы сам. Сжатие каждой площадки задаёт
+  `PlatformTargets.WebGLCompressionFor`, его выставляют `PlatformSwitcher` и `PlatformBuildPreprocessor`.
+  У Яндекса Brotli без fallback, их хостинг заголовок отдаёт.
+- **Адрес игры на хостинге VK меняется при каждой выкладке**, поэтому `PlayerPrefs`, cookies и localStorage
+  после обновления теряются. Всё, что должно сохраниться, хранить через `ICloudSaveService`.
+- Игра, пока выключена в настройках, открывается только администраторам и тестировщикам: `https://vk.com/app<ID>`.
+  Реклама до модерации показывается в тестовом режиме.
 
 ## Мост Unity и JavaScript (Яндекс и Игры ВКонтакте)
 

@@ -22,6 +22,12 @@ mergeInto(LibraryManager.library, {
     SAVE_META_KEY: 'save_meta',
     SAVE_PREFIX: 'save_',
 
+    // VKWebAppCheckNativeAds при отсутствии рекламы запускает её загрузку и отвечает false,
+    // поэтому проверяем заранее и повторяем по таймеру, как советует документация VK.
+    AD_PRELOAD_INTERVAL_MS: 30000,
+    AD_FORMATS: ['interstitial', 'reward'],
+    adReady: { interstitial: false, reward: false },
+
     initialized: false,
     // Слот последнего сохранения: 'a' или 'b'. Пишем всегда в другой, мету в конце,
     // поэтому обрыв посреди записи не портит предыдущее сохранение.
@@ -103,6 +109,29 @@ mergeInto(LibraryManager.library, {
 
     chunkKey: function (slot, index) {
       return VKGamesBridge.SAVE_PREFIX + slot + '_' + index;
+    },
+
+    adParams: function (format) {
+      var params = { ad_format: format };
+      // Для rewarded без водопада: иначе VK может подменить её межстраничной,
+      // и result: true уже не будет значить, что награду нужно выдать.
+      if (format === 'reward') params.use_waterfall = false;
+      return params;
+    },
+
+    preloadAd: function (format) {
+      return VKGamesBridge.send('VKWebAppCheckNativeAds', VKGamesBridge.adParams(format))
+        .then(function (data) { VKGamesBridge.adReady[format] = !!(data && data.result); })
+        .catch(function (e) {
+          VKGamesBridge.adReady[format] = false;
+          console.warn('[VK] VKWebAppCheckNativeAds ' + format + ' failed', e);
+        });
+    },
+
+    preloadAds: function () {
+      VKGamesBridge.AD_FORMATS.forEach(function (format) {
+        if (!VKGamesBridge.adReady[format]) VKGamesBridge.preloadAd(format);
+      });
     }
   },
 
@@ -124,6 +153,10 @@ mergeInto(LibraryManager.library, {
           'VKWebAppInit timeout: the game is probably running outside VK')
         .then(function () {
           VKGamesBridge.initialized = true;
+
+          VKGamesBridge.preloadAds();
+          setInterval(VKGamesBridge.preloadAds, VKGamesBridge.AD_PRELOAD_INTERVAL_MS);
+
           // Имя игрока нужно только для отображения, поэтому ошибка здесь не мешает запуску.
           return VKGamesBridge.withTimeout(VKGamesBridge.send('VKWebAppGetUserInfo'),
               VKGamesBridge.USER_INFO_TIMEOUT_MS, 'VKWebAppGetUserInfo timeout')
@@ -151,39 +184,48 @@ mergeInto(LibraryManager.library, {
 
   // ---------- Реклама ----------
 
+  // Реклама предзагружена (последний VKWebAppCheckNativeAds ответил true). 1 или 0.
+  VKGamesBridgeIsAdReady__deps: ['$VKGamesBridge'],
+  VKGamesBridgeIsAdReady: function (formatPtr) {
+    var format = UTF8ToString(formatPtr);
+    return VKGamesBridge.adReady[format] ? 1 : 0;
+  },
+
   // format: 'interstitial' или 'reward'.
+  // VKWebAppShowNativeAds вызывается всегда, даже если предзагрузка не успела:
+  // по документации VK метод сам запросит рекламу и покажет её при получении.
   // У нативной рекламы VK нет событий открытия и закрытия, поэтому adOpened отправляется
-  // перед показом, когда реклама точно есть, а adClosed после ответа VKWebAppShowNativeAds.
-  // Документация не уточняет, отвечает ли VK при закрытии рекламы или в момент показа:
-  // это нужно проверить на живой площадке.
+  // перед вызовом показа, а adClosed после ответа. Отвечает ли VK при закрытии рекламы
+  // или в момент показа, документация не уточняет: проверить на живой площадке.
   VKGamesBridgeShowAd__deps: ['$VKGamesBridge'],
   VKGamesBridgeShowAd: function (requestId, formatPtr) {
     if (!VKGamesBridge.ready(requestId)) return;
     try {
       var format = UTF8ToString(formatPtr);
-      var params = { ad_format: format };
-      // Для rewarded без водопада: иначе VK может подменить её межстраничной,
-      // и result: true уже не будет значить, что награду нужно выдать.
-      if (format === 'reward') params.use_waterfall = false;
+      var wasPreloaded = !!VKGamesBridge.adReady[format];
 
-      var opened = false;
+      var finish = function () {
+        VKGamesBridge.event('adClosed');
+        // Показанная реклама израсходована, сразу грузим следующую.
+        VKGamesBridge.adReady[format] = false;
+        VKGamesBridge.preloadAd(format);
+      };
 
-      VKGamesBridge.send('VKWebAppCheckNativeAds', params)
-        .then(function (check) {
-          if (!check || !check.result) return { result: false };
-          opened = true;
-          VKGamesBridge.event('adOpened');
-          return VKGamesBridge.send('VKWebAppShowNativeAds', params);
-        })
+      VKGamesBridge.event('adOpened');
+      VKGamesBridge.send('VKWebAppShowNativeAds', VKGamesBridge.adParams(format))
         .then(function (data) {
-          if (opened) VKGamesBridge.event('adClosed');
-          VKGamesBridge.ok(requestId, { shown: !!(data && data.result) });
+          finish();
+          var shown = !!(data && data.result);
+          VKGamesBridge.ok(requestId, {
+            shown: shown,
+            reason: shown ? '' : 'result=false, preloaded=' + wasPreloaded
+          });
         })
         .catch(function (e) {
-          if (opened) VKGamesBridge.event('adClosed');
+          finish();
           // Код 20 значит "нет рекламы": это не ошибка вызова.
           if (VKGamesBridge.errorCode(e) === 20) {
-            VKGamesBridge.ok(requestId, { shown: false });
+            VKGamesBridge.ok(requestId, { shown: false, reason: 'no ads (20), preloaded=' + wasPreloaded });
             return;
           }
           VKGamesBridge.fail(requestId, e);

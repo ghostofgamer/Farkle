@@ -7,11 +7,11 @@ namespace Farkle.Platform.VKGames
 {
     /// <summary>
     /// Нативная реклама VK: VKWebAppShowNativeAds с форматами interstitial и reward.
-    /// Перед показом мост проверяет наличие рекламы через VKWebAppCheckNativeAds.
+    /// Мост предзагружает оба формата после инициализации и раз в 30 секунд (VKWebAppCheckNativeAds).
     ///
-    /// Правила VK: rewarded только по действию игрока и с понятной наградой,
-    /// interstitial только на переходах между экранами и никогда сразу после запуска игры.
-    /// До прохождения модерации реклама работает в тестовом режиме.
+    /// Правила VK: rewarded только по действию игрока и с понятной наградой, а кнопку показа
+    /// выводить, только когда реклама готова (IsRewardedAvailable). Interstitial только на переходах
+    /// между экранами и никогда сразу после запуска игры. До прохождения модерации реклама работает в тестовом режиме.
     /// </summary>
     public sealed class VKGamesAdsService : IAdsService
     {
@@ -21,22 +21,28 @@ namespace Farkle.Platform.VKGames
             VKGamesBridge.AdClosed += () => AdClosed?.Invoke();
         }
 
-        /// <summary>Наличие рекламы проверяется непосредственно перед показом, поэтому здесь только готовность моста.</summary>
-        public bool IsInterstitialAvailable => VKGamesBridge.IsSupported && VKGamesSession.IsInitialized;
+        /// <summary>Interstitial можно запрашивать и без предзагрузки: VK догрузит рекламу сам.</summary>
+        public bool IsInterstitialAvailable => IsReady;
 
-        public bool IsRewardedAvailable => VKGamesBridge.IsSupported && VKGamesSession.IsInitialized;
+        /// <summary>Rewarded считается доступной, только когда предзагружена: так требует VK для кнопки показа.</summary>
+        public bool IsRewardedAvailable => IsReady && VKGamesBridge.IsRewardedReady;
 
         public event Action AdOpened;
         public event Action AdClosed;
 
+        private static bool IsReady => VKGamesBridge.IsSupported && VKGamesSession.IsInitialized;
+
         public async UniTask<bool> ShowInterstitialAsync(CancellationToken cancellationToken = default)
         {
-            if (!IsInterstitialAvailable)
+            if (!IsReady)
                 return false;
 
             try
             {
-                return await VKGamesBridge.ShowInterstitialAsync(cancellationToken);
+                var result = await VKGamesBridge.ShowInterstitialAsync(cancellationToken);
+                if (!result.shown)
+                    Debug.LogWarning($"[VKGames] Interstitial not shown: {result.reason}");
+                return result.shown;
             }
             catch (VKGamesBridgeException e)
             {
@@ -47,15 +53,20 @@ namespace Farkle.Platform.VKGames
 
         public async UniTask<RewardedAdResult> ShowRewardedAsync(string placement, CancellationToken cancellationToken = default)
         {
-            if (!IsRewardedAvailable)
+            // Показ пробуем, даже если предзагрузка не успела: VK может догрузить рекламу при показе.
+            if (!IsReady)
                 return RewardedAdResult.NotAvailable;
 
             try
             {
                 // VK не сообщает отдельно, досмотрел ли игрок рекламу: result: true единственный признак успеха.
                 // Что приходит при закрытии раньше времени, документация не описывает: проверить на живой площадке.
-                var shown = await VKGamesBridge.ShowRewardedAsync(cancellationToken);
-                return shown ? RewardedAdResult.Rewarded : RewardedAdResult.NotAvailable;
+                var result = await VKGamesBridge.ShowRewardedAsync(cancellationToken);
+                if (result.shown)
+                    return RewardedAdResult.Rewarded;
+
+                Debug.LogWarning($"[VKGames] Rewarded '{placement}' not shown: {result.reason}");
+                return RewardedAdResult.NotAvailable;
             }
             catch (VKGamesBridgeException e)
             {

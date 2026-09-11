@@ -33,7 +33,8 @@ namespace Farkle.Editor
         {
             var target = EditorUserBuildSettings.activeBuildTarget;
             var platform = CurrentFor(target);
-            Debug.Log($"[Farkle] Active build target: {target}, platform: {platform}, WebGL template: {PlayerSettings.WebGL.template}");
+            Debug.Log($"[Farkle] Active build target: {target}, platform: {platform}, WebGL template: {PlayerSettings.WebGL.template}, " +
+                      $"compression: {PlayerSettings.WebGL.compressionFormat}, decompression fallback: {PlayerSettings.WebGL.decompressionFallback}");
         }
 
         /// <summary>Площадка, заданная defines для указанной целевой платформы.</summary>
@@ -64,6 +65,8 @@ namespace Farkle.Editor
             SetDefines(NamedBuildTarget.Standalone, PlatformId.Stub);
 
             PlayerSettings.WebGL.template = PlatformTargets.WebGLTemplateFor(platform);
+            PlayerSettings.WebGL.compressionFormat = PlatformTargets.WebGLCompressionFor(platform);
+            PlayerSettings.WebGL.decompressionFallback = PlatformTargets.WebGLDecompressionFallbackFor(platform);
             PlatformPluginToggler.Apply(platform);
 
             AssetDatabase.SaveAssets();

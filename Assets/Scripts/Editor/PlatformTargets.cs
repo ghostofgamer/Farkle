@@ -44,6 +44,24 @@ namespace Farkle.Editor
             }
         }
 
+        /// <summary>
+        /// Сжатие WebGL-сборки. Яндекс отдаёт .br с заголовком Content-Encoding: br, это проверено.
+        /// Хостинг VK отдаёт .br как binary/octet-stream без заголовка (проверено 11.09.2026),
+        /// и загрузчик Unity падает с "Unable to parse". Поэтому для VK и для непроверенных хостингов
+        /// gzip с распаковкой в браузере (Decompression Fallback): Unity рекомендует gzip для этого режима,
+        /// распаковка Brotli на JavaScript медленная.
+        /// </summary>
+        public static WebGLCompressionFormat WebGLCompressionFor(PlatformId platform)
+        {
+            return platform == PlatformId.Yandex ? WebGLCompressionFormat.Brotli : WebGLCompressionFormat.Gzip;
+        }
+
+        /// <summary>Распаковывать ли сборку в браузере, если сервер не прислал Content-Encoding.</summary>
+        public static bool WebGLDecompressionFallbackFor(PlatformId platform)
+        {
+            return platform != PlatformId.Yandex;
+        }
+
         /// <summary>Папка с нативными плагинами площадки (.jslib, .aar). Null для Stub.</summary>
         public static string PluginsFolderFor(PlatformId platform)
         {

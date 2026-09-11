@@ -11,7 +11,7 @@ namespace Farkle.Editor
     /// <summary>
     /// Проверка перед любой сборкой (меню Build, Build Profiles, BuildScript, CLI):
     /// ровно один FARKLE_* define, целевая платформа соответствует площадке,
-    /// WebGL-шаблон выставлен, нативные плагины чужих площадок выключены.
+    /// WebGL-шаблон и сжатие выставлены, нативные плагины чужих площадок выключены.
     /// При несоответствии сборка останавливается с понятным сообщением.
     /// </summary>
     public sealed class PlatformBuildPreprocessor : IPreprocessBuildWithReport
@@ -49,6 +49,16 @@ namespace Farkle.Editor
                 {
                     Debug.Log($"[Farkle] Setting WebGL template to {template}");
                     PlayerSettings.WebGL.template = template;
+                }
+
+                // Сжатие зависит от того, как хостинг площадки отдаёт файлы, см. PlatformTargets.
+                var compression = PlatformTargets.WebGLCompressionFor(platform);
+                var fallback = PlatformTargets.WebGLDecompressionFallbackFor(platform);
+                if (PlayerSettings.WebGL.compressionFormat != compression || PlayerSettings.WebGL.decompressionFallback != fallback)
+                {
+                    Debug.Log($"[Farkle] Setting WebGL compression to {compression}, decompression fallback {fallback}");
+                    PlayerSettings.WebGL.compressionFormat = compression;
+                    PlayerSettings.WebGL.decompressionFallback = fallback;
                 }
             }
 

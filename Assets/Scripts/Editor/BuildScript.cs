@@ -1,3 +1,4 @@
+using System.IO;
 using System.Linq;
 using Farkle.Platform;
 using UnityEditor;
@@ -29,7 +30,16 @@ namespace Farkle.Editor
         [MenuItem("Farkle/Build/RuStore (Android APK)", priority = 3)]
         public static void BuildRuStore() => Build(PlatformId.RuStore);
 
+        /// <summary>Сборка из меню или CLI. В batchmode завершает Unity с кодом результата.</summary>
         public static void Build(PlatformId platform)
+        {
+            var ok = TryBuild(platform);
+            if (Application.isBatchMode)
+                EditorApplication.Exit(ok ? 0 : 1);
+        }
+
+        /// <summary>Сборка без выхода из Unity: для цепочек вроде "собрать и выложить".</summary>
+        public static bool TryBuild(PlatformId platform)
         {
             PlatformSwitcher.Apply(platform);
 
@@ -37,8 +47,8 @@ namespace Farkle.Editor
             var scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
             if (scenes.Length == 0)
             {
-                Fail("No scenes enabled in Build Settings");
-                return;
+                Debug.LogError("[Farkle] No scenes enabled in Build Settings");
+                return false;
             }
 
             var location = target == BuildTarget.Android
@@ -47,6 +57,11 @@ namespace Farkle.Editor
 
             if (target == BuildTarget.Android)
                 EditorUserBuildSettings.buildAppBundle = false;
+
+            // Папка WebGL-сборки заливается на хостинг целиком (выкладка VK упаковывает её всю),
+            // поэтому файлы прошлой сборки, например .br после смены сжатия, удаляем заранее.
+            if (target == BuildTarget.WebGL && Directory.Exists(location))
+                FileUtil.DeleteFileOrDirectory(location);
 
             var options = new BuildPlayerOptions
             {
@@ -63,20 +78,11 @@ namespace Farkle.Editor
             if (summary.result == BuildResult.Succeeded)
             {
                 Debug.Log($"[Farkle] Build {platform} succeeded: {summary.outputPath} ({summary.totalSize / (1024 * 1024)} MB, {summary.totalTime:mm\\:ss})");
-                if (Application.isBatchMode)
-                    EditorApplication.Exit(0);
+                return true;
             }
-            else
-            {
-                Fail($"Build {platform} finished with {summary.result}: {summary.totalErrors} errors");
-            }
-        }
 
-        private static void Fail(string message)
-        {
-            Debug.LogError("[Farkle] " + message);
-            if (Application.isBatchMode)
-                EditorApplication.Exit(1);
+            Debug.LogError($"[Farkle] Build {platform} finished with {summary.result}: {summary.totalErrors} errors");
+            return false;
         }
     }
 }

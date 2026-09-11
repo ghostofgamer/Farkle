@@ -40,6 +40,15 @@ namespace Farkle.Game.Debugging
         /// <summary>Подписи, которые нужно перевести заново при смене языка.</summary>
         private readonly List<KeyValuePair<Text, string>> _localizedTexts = new List<KeyValuePair<Text, string>>();
 
+        /// <summary>
+        /// Сообщения с этими префиксами дублируются из консоли в лог панели.
+        /// В билде консоль браузера неудобна, особенно на телефоне, а причина сбоя SDK пишется именно туда.
+        /// </summary>
+        private static readonly string[] MirroredLogPrefixes =
+        {
+            "[Platform]", "[Quality]", "[Stub]", "[Yandex]", "[VKGames]", "[VKPlay]", "[RuStore]",
+        };
+
         private Action _onAdOpened;
         private Action _onAdClosed;
         private Action _onLanguageChanged;
@@ -72,6 +81,8 @@ namespace Farkle.Game.Debugging
                 _font = LoadFont();
                 BuildUi();
                 ReportMissingDependencies();
+
+                Application.logMessageReceived += OnLogMessage;
 
                 if (_ads != null)
                 {
@@ -154,8 +165,44 @@ namespace Farkle.Game.Debugging
             image.raycastTarget = false;
         }
 
+        private void OnLogMessage(string message, string stackTrace, LogType type)
+        {
+            if (string.IsNullOrEmpty(message) || _logText == null)
+                return;
+
+            var mirrored = false;
+            foreach (var prefix in MirroredLogPrefixes)
+            {
+                if (message.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    mirrored = true;
+                    break;
+                }
+            }
+
+            if (!mirrored)
+                return;
+
+            switch (type)
+            {
+                case LogType.Error:
+                case LogType.Exception:
+                case LogType.Assert:
+                    AppendLine($"<color=#f66>{message}</color>");
+                    break;
+                case LogType.Warning:
+                    AppendLine($"<color=#fc6>{message}</color>");
+                    break;
+                default:
+                    AppendLine($"<color=#aaa>{message}</color>");
+                    break;
+            }
+        }
+
         private void OnDestroy()
         {
+            Application.logMessageReceived -= OnLogMessage;
+
             if (_ads != null)
             {
                 _ads.AdOpened -= _onAdOpened;
@@ -453,7 +500,12 @@ namespace Farkle.Game.Debugging
         private void Log(string message)
         {
             Debug.Log("[TestPanel] " + message);
+            AppendLine(message);
+        }
 
+        /// <summary>Строка только в лог панели, без повторной записи в консоль.</summary>
+        private void AppendLine(string message)
+        {
             _logLines.Add($"<color=#888>{DateTime.Now:HH:mm:ss}</color> {message}");
             if (_logLines.Count > MaxLogLines)
                 _logLines.RemoveRange(0, _logLines.Count - MaxLogLines);

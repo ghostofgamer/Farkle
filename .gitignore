@@ -71,6 +71,8 @@ sysinfo.txt
 mono_crash.*
 
 # Builds
+# Архив, который оставляет ручная выкладка на хостинг VK (npx @vkontakte/vk-miniapps-deploy из корня)
+/build.zip
 *.apk
 *.aab
 *.unitypackage

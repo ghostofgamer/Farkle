@@ -31,6 +31,8 @@ namespace Farkle.Platform.VKGames
     internal sealed class AdResultDto
     {
         public bool shown;
+        /// <summary>Почему реклама не показана. Пусто, если показана.</summary>
+        public string reason;
     }
 
     [Serializable]

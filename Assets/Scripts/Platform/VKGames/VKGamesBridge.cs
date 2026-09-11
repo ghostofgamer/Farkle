@@ -59,17 +59,22 @@ namespace Farkle.Platform.VKGames
             return JsonUtility.FromJson<LaunchInfoDto>(json);
         }
 
-        public static async UniTask<bool> ShowInterstitialAsync(CancellationToken cancellationToken)
+        public static async UniTask<AdResultDto> ShowInterstitialAsync(CancellationToken cancellationToken)
         {
             var json = await CallAsync(id => VKGamesBridgeShowAd(id, InterstitialFormat), cancellationToken);
-            return JsonUtility.FromJson<AdResultDto>(json).shown;
+            return JsonUtility.FromJson<AdResultDto>(json);
         }
 
-        public static async UniTask<bool> ShowRewardedAsync(CancellationToken cancellationToken)
+        public static async UniTask<AdResultDto> ShowRewardedAsync(CancellationToken cancellationToken)
         {
             var json = await CallAsync(id => VKGamesBridgeShowAd(id, RewardedFormat), cancellationToken);
-            return JsonUtility.FromJson<AdResultDto>(json).shown;
+            return JsonUtility.FromJson<AdResultDto>(json);
         }
+
+        /// <summary>Реклама уже предзагружена мостом и покажется без задержки.</summary>
+        public static bool IsInterstitialReady => IsSupported && VKGamesBridgeIsAdReady(InterstitialFormat) != 0;
+
+        public static bool IsRewardedReady => IsSupported && VKGamesBridgeIsAdReady(RewardedFormat) != 0;
 
         public static UniTask SaveAsync(string json, CancellationToken cancellationToken)
         {
@@ -188,12 +193,14 @@ namespace Farkle.Platform.VKGames
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")] private static extern void VKGamesBridgeInit(int requestId);
         [DllImport("__Internal")] private static extern void VKGamesBridgeShowAd(int requestId, string format);
+        [DllImport("__Internal")] private static extern int VKGamesBridgeIsAdReady(string format);
         [DllImport("__Internal")] private static extern void VKGamesBridgeSave(int requestId, string json);
         [DllImport("__Internal")] private static extern void VKGamesBridgeLoad(int requestId);
 #else
         // Заглушки для редактора: сюда попадать не должны, CallAsync отсекает раньше.
         private static void VKGamesBridgeInit(int requestId) { }
         private static void VKGamesBridgeShowAd(int requestId, string format) { }
+        private static int VKGamesBridgeIsAdReady(string format) { return 0; }
         private static void VKGamesBridgeSave(int requestId, string json) { }
         private static void VKGamesBridgeLoad(int requestId) { }
 #endif

@@ -12,6 +12,11 @@
   <assembly fullname="Farkle.Platform.Yandex" preserve="all" />
   <assembly fullname="Farkle.Platform.VKPlay" preserve="all" />
   <assembly fullname="Farkle.Platform.RuStore" preserve="all" />
+  <assembly fullname="Farkle.Platform.VKGames" preserve="all" />
   <assembly fullname="Farkle.Platform.Installers" preserve="all" />
   <assembly fullname="UniTask" preserve="all" />
+  <!-- Zenject внедряет зависимости через reflection, а UI строится из кода: стриппинг им мешает. -->
+  <assembly fullname="Zenject" preserve="all" />
+  <assembly fullname="Zenject-usage" preserve="all" />
+  <assembly fullname="UnityEngine.UI" preserve="all" />
 </linker>

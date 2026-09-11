@@ -15,6 +15,9 @@ namespace Farkle.Platform
         /// <summary>Код языка из SDK площадки, например "ru" или "en".</summary>
         string Language { get; }
 
+        /// <summary>Тип устройства игрока. Надёжен только после InitializeAsync.</summary>
+        DeviceKind Device { get; }
+
         bool IsAuthorized { get; }
         string PlayerId { get; }
         string PlayerName { get; }

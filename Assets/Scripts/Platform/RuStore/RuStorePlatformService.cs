@@ -14,6 +14,8 @@ namespace Farkle.Platform.RuStore
         public PlatformId Platform => PlatformId.RuStore;
         public bool IsInitialized { get; private set; }
         public string Language => Application.systemLanguage == SystemLanguage.Russian ? "ru" : "en";
+        // Планшеты пока не отличаем от телефонов: для этого нужен размер экрана в дюймах.
+        public DeviceKind Device => DeviceKind.Mobile;
         public bool IsAuthorized => false;
         public string PlayerId => null;
         public string PlayerName => null;

@@ -1,0 +1,22 @@
+{
+    "name": "Farkle.Platform.VKGames",
+    "rootNamespace": "Farkle.Platform.VKGames",
+    "references": [
+        "Farkle.Platform.Abstractions",
+        "UniTask"
+    ],
+    "includePlatforms": [
+        "Editor",
+        "WebGL"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "FARKLE_VKGAMES"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

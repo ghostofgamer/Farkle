@@ -6,31 +6,62 @@ using UnityEngine;
 namespace Farkle.Platform.Yandex
 {
     /// <summary>
-    /// Реклама Яндекс Игр. TODO: ysdk.adv.showFullscreenAdv и ysdk.adv.showRewardedVideo.
-    /// Между показами fullscreen-рекламы у Яндекса есть минимальный интервал, SDK сам его контролирует.
+    /// Реклама Яндекс Игр: showFullscreenAdv и showRewardedVideo.
+    /// SDK сам следит за минимальным интервалом между показами fullscreen-рекламы:
+    /// при слишком частом вызове реклама просто не покажется, и метод вернёт false.
     /// </summary>
     public sealed class YandexAdsService : IAdsService
     {
-        public bool IsInterstitialAvailable => false;
-        public bool IsRewardedAvailable => false;
+        public YandexAdsService()
+        {
+            YandexBridge.AdOpened += () => AdOpened?.Invoke();
+            YandexBridge.AdClosed += () => AdClosed?.Invoke();
+        }
+
+        /// <summary>SDK не сообщает о доступности заранее, поэтому ориентируемся на инициализацию.</summary>
+        public bool IsInterstitialAvailable => YandexBridge.IsSupported && YandexSession.IsInitialized;
+
+        public bool IsRewardedAvailable => YandexBridge.IsSupported && YandexSession.IsInitialized;
 
         public event Action AdOpened;
         public event Action AdClosed;
 
-        public UniTask<bool> ShowInterstitialAsync(CancellationToken cancellationToken = default)
+        public async UniTask<bool> ShowInterstitialAsync(CancellationToken cancellationToken = default)
         {
-            Debug.LogWarning("[Yandex] ShowInterstitial: SDK not integrated yet");
-            return UniTask.FromResult(false);
+            if (!IsInterstitialAvailable)
+                return false;
+
+            try
+            {
+                var result = await YandexBridge.ShowInterstitialAsync(cancellationToken);
+                return result.shown;
+            }
+            catch (YandexBridgeException e)
+            {
+                Debug.LogWarning($"[Yandex] Interstitial failed: {e.Message}");
+                return false;
+            }
         }
 
-        public UniTask<RewardedAdResult> ShowRewardedAsync(string placement, CancellationToken cancellationToken = default)
+        public async UniTask<RewardedAdResult> ShowRewardedAsync(string placement, CancellationToken cancellationToken = default)
         {
-            Debug.LogWarning($"[Yandex] ShowRewarded '{placement}': SDK not integrated yet");
-            return UniTask.FromResult(RewardedAdResult.NotAvailable);
-        }
+            if (!IsRewardedAvailable)
+                return RewardedAdResult.NotAvailable;
 
-        // Заглушки, чтобы компилятор не ругался на неиспользуемые события до интеграции SDK.
-        private void RaiseOpened() => AdOpened?.Invoke();
-        private void RaiseClosed() => AdClosed?.Invoke();
+            try
+            {
+                var result = await YandexBridge.ShowRewardedAsync(cancellationToken);
+
+                if (result.rewarded)
+                    return RewardedAdResult.Rewarded;
+
+                return result.shown ? RewardedAdResult.Closed : RewardedAdResult.NotAvailable;
+            }
+            catch (YandexBridgeException e)
+            {
+                Debug.LogWarning($"[Yandex] Rewarded '{placement}' failed: {e.Message}");
+                return RewardedAdResult.Failed;
+            }
+        }
     }
 }

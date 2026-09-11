@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Cysharp.Threading.Tasks;
+using Farkle.Core.Localization;
+using Farkle.Game.Quality;
 using Farkle.Platform;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,26 +14,35 @@ namespace Farkle.Game.Debugging
     /// <summary>
     /// Отладочная панель: по кнопке на каждый метод платформенных интерфейсов.
     /// UI строится в коде при старте, чтобы сцена не зависела от ручной разводки ссылок.
-    /// Одна и та же сцена собирается под все площадки и показывает, что делает каждая реализация.
+    /// Подписи переводятся: язык приходит из SDK площадки, кнопка смены языка нужна для проверки.
     /// </summary>
     public sealed class PlatformTestPanel : MonoBehaviour
     {
         private const int MaxLogLines = 40;
         private const string SaveCounterKey = "farkle.test.counter";
 
+        /// <summary>Техническое имя лидерборда, должно совпадать с Консолью разработчика.</summary>
+        private const string LeaderboardId = "score";
+
         private IPlatformService _platform;
         private IAdsService _ads;
         private IPurchaseService _purchases;
         private ICloudSaveService _saves;
         private ILeaderboardService _leaderboards;
+        private ILocalization _localization;
+        private IQualityService _quality;
 
         private Font _font;
         private Text _logText;
         private readonly List<string> _logLines = new List<string>();
         private readonly List<PurchaseInfo> _lastPending = new List<PurchaseInfo>();
 
+        /// <summary>Подписи, которые нужно перевести заново при смене языка.</summary>
+        private readonly List<KeyValuePair<Text, string>> _localizedTexts = new List<KeyValuePair<Text, string>>();
+
         private Action _onAdOpened;
         private Action _onAdClosed;
+        private Action _onLanguageChanged;
 
         [Inject]
         public void Construct(
@@ -39,34 +50,131 @@ namespace Farkle.Game.Debugging
             IAdsService ads,
             IPurchaseService purchases,
             ICloudSaveService saves,
-            ILeaderboardService leaderboards)
+            ILeaderboardService leaderboards,
+            ILocalization localization,
+            IQualityService quality)
         {
             _platform = platform;
             _ads = ads;
             _purchases = purchases;
             _saves = saves;
             _leaderboards = leaderboards;
+            _localization = localization;
+            _quality = quality;
         }
 
         private void Start()
         {
-            _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            BuildUi();
+            // Панель обязана построиться даже при сбое: иначе в билде виден пустой экран
+            // без единой подсказки о причине.
+            try
+            {
+                _font = LoadFont();
+                BuildUi();
+                ReportMissingDependencies();
 
-            _onAdOpened = () => Log("event AdOpened (здесь глушим звук и ставим паузу)");
-            _onAdClosed = () => Log("event AdClosed (возвращаем звук и снимаем паузу)");
-            _ads.AdOpened += _onAdOpened;
-            _ads.AdClosed += _onAdClosed;
+                if (_ads != null)
+                {
+                    _onAdOpened = () => Log(Translate("log.adOpened"));
+                    _onAdClosed = () => Log(Translate("log.adClosed"));
+                    _ads.AdOpened += _onAdOpened;
+                    _ads.AdClosed += _onAdClosed;
+                }
 
-            LogStatus();
+                // Инициализация площадки асинхронная, язык приходит позже старта сцены.
+                if (_localization != null)
+                {
+                    _onLanguageChanged = OnLanguageChanged;
+                    _localization.LanguageChanged += _onLanguageChanged;
+                }
+
+                LogStatus();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[TestPanel] Build failed: " + e);
+                Debug.LogException(e);
+                ShowFatalError();
+            }
+        }
+
+        /// <summary>
+        /// Шрифт интерфейса. Свой TTF обязателен: встроенный шрифт Unity
+        /// в WebGL-сборке не рисует кириллицу, потому что в браузере нет системных шрифтов.
+        /// Встроенный остаётся запасным вариантом на случай, если ресурс не найден.
+        /// </summary>
+        private static Font LoadFont()
+        {
+            var font = Resources.Load<Font>("Fonts/Roboto-Regular");
+            if (font != null)
+                return font;
+
+            Debug.LogError("[TestPanel] Fonts/Roboto-Regular not found, Cyrillic text will be invisible in WebGL");
+
+            font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (font == null)
+                font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+
+            return font;
+        }
+
+        /// <summary>Перевод, устойчивый к отсутствию зависимости: без неё показываем сам ключ.</summary>
+        private string Translate(string key)
+        {
+            return _localization != null ? _localization.Get(key) : key;
+        }
+
+        /// <summary>Пишет в лог, какие зависимости не пришли из контейнера.</summary>
+        private void ReportMissingDependencies()
+        {
+            var missing = new List<string>();
+            if (_platform == null) missing.Add(nameof(IPlatformService));
+            if (_ads == null) missing.Add(nameof(IAdsService));
+            if (_purchases == null) missing.Add(nameof(IPurchaseService));
+            if (_saves == null) missing.Add(nameof(ICloudSaveService));
+            if (_leaderboards == null) missing.Add(nameof(ILeaderboardService));
+            if (_localization == null) missing.Add(nameof(ILocalization));
+            if (_quality == null) missing.Add(nameof(IQualityService));
+
+            if (missing.Count == 0)
+                return;
+
+            var message = "Dependency injection failed: " + string.Join(", ", missing);
+            Debug.LogError("[TestPanel] " + message);
+            Log($"<color=#f66>{message}</color>");
+            ShowFatalError();
+        }
+
+        /// <summary>Красная полоса сверху: видна даже когда шрифт не загрузился.</summary>
+        private void ShowFatalError()
+        {
+            var rect = CreateRect("FatalError", (RectTransform)transform, new Vector2(0f, 0.96f), Vector2.one);
+            var image = rect.gameObject.AddComponent<Image>();
+            image.color = new Color(0.8f, 0.15f, 0.15f, 1f);
+            image.raycastTarget = false;
         }
 
         private void OnDestroy()
         {
-            if (_ads == null)
-                return;
-            _ads.AdOpened -= _onAdOpened;
-            _ads.AdClosed -= _onAdClosed;
+            if (_ads != null)
+            {
+                _ads.AdOpened -= _onAdOpened;
+                _ads.AdClosed -= _onAdClosed;
+            }
+
+            if (_localization != null)
+                _localization.LanguageChanged -= _onLanguageChanged;
+        }
+
+        private void OnLanguageChanged()
+        {
+            foreach (var pair in _localizedTexts)
+            {
+                if (pair.Key != null)
+                    pair.Key.text = Translate(pair.Value);
+            }
+
+            Log($"{Translate("log.languageDetected")}: {_localization.Language}");
         }
 
         // ---------- UI ----------
@@ -99,34 +207,36 @@ namespace Farkle.Game.Debugging
             _logText.horizontalOverflow = HorizontalWrapMode.Wrap;
             _logText.verticalOverflow = VerticalWrapMode.Truncate;
 
-            AddButton(buttons, "Статус", () => { LogStatus(); return UniTask.CompletedTask; });
-            AddButton(buttons, "Авторизация", Authorize);
-            AddButton(buttons, "GameReady", () => { _platform.NotifyGameReady(); Log("GameReady отправлен"); return UniTask.CompletedTask; });
-            AddButton(buttons, "Gameplay Start", () => { _platform.NotifyGameplayStart(); Log("GameplayStart отправлен"); return UniTask.CompletedTask; });
-            AddButton(buttons, "Gameplay Stop", () => { _platform.NotifyGameplayStop(); Log("GameplayStop отправлен"); return UniTask.CompletedTask; });
+            AddButton(buttons, "btn.status", () => { LogStatus(); return UniTask.CompletedTask; });
+            AddButton(buttons, "btn.authorize", Authorize);
+            AddButton(buttons, "btn.gameReady", () => { _platform.NotifyGameReady(); Log(Translate("log.gameReadySent")); return UniTask.CompletedTask; });
+            AddButton(buttons, "btn.gameplayStart", () => { _platform.NotifyGameplayStart(); Log(Translate("log.gameplayStartSent")); return UniTask.CompletedTask; });
+            AddButton(buttons, "btn.gameplayStop", () => { _platform.NotifyGameplayStop(); Log(Translate("log.gameplayStopSent")); return UniTask.CompletedTask; });
 
-            AddButton(buttons, "Реклама: доступность", () => { Log($"interstitial={_ads.IsInterstitialAvailable} rewarded={_ads.IsRewardedAvailable}"); return UniTask.CompletedTask; });
-            AddButton(buttons, "Показать interstitial", ShowInterstitial);
-            AddButton(buttons, "Показать rewarded", ShowRewarded);
+            AddButton(buttons, "btn.adsStatus", () => { Log($"interstitial={_ads.IsInterstitialAvailable} rewarded={_ads.IsRewardedAvailable}"); return UniTask.CompletedTask; });
+            AddButton(buttons, "btn.interstitial", ShowInterstitial);
+            AddButton(buttons, "btn.rewarded", ShowRewarded);
 
-            AddButton(buttons, "Магазин: товары", GetProducts);
-            AddButton(buttons, "Купить no_ads", () => Purchase("no_ads"));
-            AddButton(buttons, "Неподтверждённые покупки", GetPending);
-            AddButton(buttons, "Подтвердить все", ConsumeAll);
+            AddButton(buttons, "btn.products", GetProducts);
+            AddButton(buttons, "btn.buy", () => Purchase("no_ads"));
+            AddButton(buttons, "btn.pending", GetPending);
+            AddButton(buttons, "btn.consume", ConsumeAll);
 
-            AddButton(buttons, "Сохранить", Save);
-            AddButton(buttons, "Загрузить", Load);
+            AddButton(buttons, "btn.save", Save);
+            AddButton(buttons, "btn.load", Load);
 
-            AddButton(buttons, "Лидерборд: отправить очки", SubmitScore);
-            AddButton(buttons, "Лидерборд: топ 10", GetTop);
-            AddButton(buttons, "Лидерборд: моя запись", GetPlayerEntry);
+            AddButton(buttons, "btn.submitScore", SubmitScore);
+            AddButton(buttons, "btn.top", GetTop);
+            AddButton(buttons, "btn.myEntry", GetPlayerEntry);
 
-            AddButton(buttons, "Очистить лог", () => { _logLines.Clear(); _logText.text = string.Empty; return UniTask.CompletedTask; });
+            AddButton(buttons, "btn.language", SwitchLanguage);
+            AddButton(buttons, "btn.quality", SwitchQuality);
+            AddButton(buttons, "btn.clearLog", () => { _logLines.Clear(); _logText.text = string.Empty; return UniTask.CompletedTask; });
         }
 
-        private void AddButton(RectTransform parent, string label, Func<UniTask> action)
+        private void AddButton(RectTransform parent, string labelKey, Func<UniTask> action)
         {
-            var go = new GameObject(label, typeof(RectTransform));
+            var go = new GameObject(labelKey, typeof(RectTransform));
             go.transform.SetParent(parent, false);
 
             var image = go.AddComponent<Image>();
@@ -141,9 +251,12 @@ namespace Farkle.Game.Debugging
             text.fontSize = 20;
             text.color = Color.white;
             text.alignment = TextAnchor.MiddleCenter;
-            text.text = label;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.text = Translate(labelKey);
 
-            button.onClick.AddListener(() => Run(label, action).Forget());
+            _localizedTexts.Add(new KeyValuePair<Text, string>(text, labelKey));
+
+            button.onClick.AddListener(() => Run(labelKey, action).Forget());
         }
 
         private static RectTransform CreateRect(string name, RectTransform parent, Vector2 anchorMin, Vector2 anchorMax)
@@ -168,25 +281,78 @@ namespace Farkle.Game.Debugging
 
         // ---------- Actions ----------
 
-        private async UniTaskVoid Run(string label, Func<UniTask> action)
+        private async UniTaskVoid Run(string labelKey, Func<UniTask> action)
         {
-            Log($"<color=#9cf>> {label}</color>");
+            Log($"<color=#9cf>> {Translate(labelKey)}</color>");
             try
             {
                 await action();
             }
             catch (Exception e)
             {
-                Log($"<color=#f66>{label}: {e.GetType().Name}: {e.Message}</color>");
+                Log($"<color=#f66>{e.GetType().Name}: {e.Message}</color>");
                 Debug.LogException(e);
             }
         }
 
+        /// <summary>Ручное переключение языка нужно, чтобы проверить перевод без смены языка площадки.</summary>
+        private UniTask SwitchLanguage()
+        {
+            if (_localization == null)
+                return UniTask.CompletedTask;
+
+            var supported = Localization.Supported;
+            var index = 0;
+            for (var i = 0; i < supported.Count; i++)
+            {
+                if (supported[i] == _localization.Language)
+                {
+                    index = i;
+                    break;
+                }
+            }
+
+            _localization.SetLanguage(supported[(index + 1) % supported.Count]);
+            return UniTask.CompletedTask;
+        }
+
+        /// <summary>Перебирает уровни качества по кругу, чтобы проверить переключение Quality Level.</summary>
+        private UniTask SwitchQuality()
+        {
+            if (_quality == null)
+                return UniTask.CompletedTask;
+
+            var tiers = (QualityTier[])Enum.GetValues(typeof(QualityTier));
+            var next = tiers[((int)_quality.Tier + 1) % tiers.Length];
+            _quality.SetTier(next);
+            LogQuality();
+            return UniTask.CompletedTask;
+        }
+
+        private void LogQuality()
+        {
+            var level = QualitySettings.GetQualityLevel();
+            var names = QualitySettings.names;
+            var levelName = level >= 0 && level < names.Length ? names[level] : "?";
+            Log($"{Translate("log.quality")}: device={_quality.Device} recommended={_quality.Recommended} " +
+                $"tier={_quality.Tier} level={levelName} screen={Screen.width}x{Screen.height}");
+        }
+
         private void LogStatus()
         {
-            Log($"platform={_platform.Platform} initialized={_platform.IsInitialized} lang={_platform.Language} " +
+            if (_platform == null || _localization == null)
+            {
+                Log("<color=#f66>Status is unavailable: services were not injected</color>");
+                return;
+            }
+
+            Log($"platform={_platform.Platform} initialized={_platform.IsInitialized} " +
+                $"sdkLang={_platform.Language} uiLang={_localization.Language} " +
                 $"authorized={_platform.IsAuthorized} player={_platform.PlayerName ?? "-"}");
             Log($"purchases={_purchases.IsAvailable} cloudSave={_saves.IsAvailable} leaderboard={_leaderboards.IsAvailable}");
+
+            if (_quality != null)
+                LogQuality();
         }
 
         private async UniTask Authorize()
@@ -210,9 +376,9 @@ namespace Farkle.Game.Debugging
         private async UniTask GetProducts()
         {
             var products = await _purchases.GetProductsAsync();
-            Log($"products: {products.Count}");
+            Log($"{Translate("log.products")}: {products.Count}");
             foreach (var p in products)
-                Log($"  {p.Id}: {p.Title} за {p.PriceFormatted}");
+                Log($"  {p.Id}: {p.Title} - {p.PriceFormatted}");
         }
 
         private async UniTask Purchase(string productId)
@@ -228,7 +394,7 @@ namespace Farkle.Game.Debugging
             var pending = await _purchases.GetPendingPurchasesAsync();
             _lastPending.Clear();
             _lastPending.AddRange(pending);
-            Log($"pending purchases: {pending.Count}");
+            Log($"{Translate("log.pending")}: {pending.Count}");
             foreach (var p in pending)
                 Log($"  {p.ProductId} token={Short(p.PurchaseToken)}");
         }
@@ -258,28 +424,28 @@ namespace Farkle.Game.Debugging
         private async UniTask Load()
         {
             var json = await _saves.LoadAsync();
-            Log(json == null ? "no save" : $"loaded: {json}");
+            Log(json == null ? Translate("log.noSave") : $"loaded: {json}");
         }
 
         private async UniTask SubmitScore()
         {
             var score = UnityEngine.Random.Range(1000, 15000);
-            await _leaderboards.SubmitScoreAsync("main", score);
+            await _leaderboards.SubmitScoreAsync(LeaderboardId, score);
             Log($"submitted score {score}");
         }
 
         private async UniTask GetTop()
         {
-            var top = await _leaderboards.GetTopAsync("main", 10);
-            Log($"top entries: {top.Count}");
+            var top = await _leaderboards.GetTopAsync(LeaderboardId, 10);
+            Log($"{Translate("log.topEntries")}: {top.Count}");
             foreach (var e in top)
-                Log($"  #{e.Rank} {e.PlayerName}: {e.Score}{(e.IsCurrentPlayer ? " (я)" : "")}");
+                Log($"  #{e.Rank} {e.PlayerName}: {e.Score}{(e.IsCurrentPlayer ? $" ({Translate("log.me")})" : "")}");
         }
 
         private async UniTask GetPlayerEntry()
         {
-            var entry = await _leaderboards.GetPlayerEntryAsync("main");
-            Log(entry == null ? "player entry: none" : $"player entry: #{entry.Rank} {entry.Score}");
+            var entry = await _leaderboards.GetPlayerEntryAsync(LeaderboardId);
+            Log(entry == null ? Translate("log.noEntry") : $"#{entry.Rank} {entry.Score}");
         }
 
         // ---------- Log ----------

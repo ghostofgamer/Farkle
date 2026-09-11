@@ -18,6 +18,7 @@ namespace Farkle.Editor
             {
                 case PlatformId.Yandex:
                 case PlatformId.VKPlay:
+                case PlatformId.VKGames:
                     return BuildTarget.WebGL;
                 case PlatformId.RuStore:
                     return BuildTarget.Android;
@@ -38,6 +39,7 @@ namespace Farkle.Editor
             {
                 case PlatformId.Yandex: return "PROJECT:Yandex";
                 case PlatformId.VKPlay: return "PROJECT:VKPlay";
+                case PlatformId.VKGames: return "PROJECT:VKGames";
                 default: return "APPLICATION:Default";
             }
         }
@@ -50,11 +52,15 @@ namespace Farkle.Editor
                 case PlatformId.Yandex: return PlatformRoot + "/Yandex/Plugins";
                 case PlatformId.VKPlay: return PlatformRoot + "/VKPlay/Plugins";
                 case PlatformId.RuStore: return PlatformRoot + "/RuStore/Plugins";
+                case PlatformId.VKGames: return PlatformRoot + "/VKGames/Plugins";
                 default: return null;
             }
         }
 
-        public static readonly PlatformId[] SdkPlatforms = { PlatformId.Yandex, PlatformId.VKPlay, PlatformId.RuStore };
+        public static readonly PlatformId[] SdkPlatforms =
+        {
+            PlatformId.Yandex, PlatformId.VKPlay, PlatformId.RuStore, PlatformId.VKGames,
+        };
 
         /// <summary>Определяет площадку по списку defines. Бросает исключение, если задано больше одного FARKLE_*.</summary>
         public static PlatformId ParseDefines(IEnumerable<string> defines)

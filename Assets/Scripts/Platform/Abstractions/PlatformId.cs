@@ -7,9 +7,11 @@ namespace Farkle.Platform
         Stub = 0,
         /// <summary>Яндекс Игры, WebGL.</summary>
         Yandex = 1,
-        /// <summary>VK Play, WebGL.</summary>
+        /// <summary>VK Play (vkplay.ru), раздел браузерных игр, WebGL. Свой API, не VK Bridge.</summary>
         VKPlay = 2,
         /// <summary>RuStore, нативный Android.</summary>
         RuStore = 3,
+        /// <summary>Игры ВКонтакте (vk.com и мобильное приложение VK), WebGL через VK Bridge.</summary>
+        VKGames = 4,
     }
 }

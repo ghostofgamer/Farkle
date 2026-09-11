@@ -10,6 +10,7 @@ namespace Farkle.Editor
     /// Сборка под площадку одной командой: переключает площадку и запускает BuildPipeline.
     /// Меню Farkle/Build или из командной строки:
     ///   Unity -batchmode -quit -projectPath . -buildTarget WebGL -executeMethod Farkle.Editor.BuildScript.BuildYandex
+    ///   Unity -batchmode -quit -projectPath . -buildTarget WebGL -executeMethod Farkle.Editor.BuildScript.BuildVKGames
     ///   Unity -batchmode -quit -projectPath . -buildTarget WebGL -executeMethod Farkle.Editor.BuildScript.BuildVKPlay
     ///   Unity -batchmode -quit -projectPath . -buildTarget Android -executeMethod Farkle.Editor.BuildScript.BuildRuStore
     /// Результат кладётся в Builds/&lt;площадка&gt;.
@@ -19,10 +20,13 @@ namespace Farkle.Editor
         [MenuItem("Farkle/Build/Yandex Games (WebGL)", priority = 0)]
         public static void BuildYandex() => Build(PlatformId.Yandex);
 
-        [MenuItem("Farkle/Build/VK Play (WebGL)", priority = 1)]
+        [MenuItem("Farkle/Build/VK Games (WebGL)", priority = 1)]
+        public static void BuildVKGames() => Build(PlatformId.VKGames);
+
+        [MenuItem("Farkle/Build/VK Play (WebGL)", priority = 2)]
         public static void BuildVKPlay() => Build(PlatformId.VKPlay);
 
-        [MenuItem("Farkle/Build/RuStore (Android APK)", priority = 2)]
+        [MenuItem("Farkle/Build/RuStore (Android APK)", priority = 3)]
         public static void BuildRuStore() => Build(PlatformId.RuStore);
 
         public static void Build(PlatformId platform)

@@ -9,8 +9,9 @@ namespace Farkle.Platform
         public const string Yandex = "FARKLE_YANDEX";
         public const string VKPlay = "FARKLE_VKPLAY";
         public const string RuStore = "FARKLE_RUSTORE";
+        public const string VKGames = "FARKLE_VKGAMES";
 
-        public static readonly string[] All = { Yandex, VKPlay, RuStore };
+        public static readonly string[] All = { Yandex, VKPlay, RuStore, VKGames };
 
         public static string For(PlatformId platform)
         {
@@ -19,6 +20,7 @@ namespace Farkle.Platform
                 case PlatformId.Yandex: return Yandex;
                 case PlatformId.VKPlay: return VKPlay;
                 case PlatformId.RuStore: return RuStore;
+                case PlatformId.VKGames: return VKGames;
                 default: return null;
             }
         }

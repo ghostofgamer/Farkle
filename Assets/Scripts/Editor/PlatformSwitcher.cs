@@ -19,10 +19,13 @@ namespace Farkle.Editor
         [MenuItem("Farkle/Platform/Yandex Games (WebGL)", priority = 1)]
         public static void SwitchToYandex() => Apply(PlatformId.Yandex);
 
-        [MenuItem("Farkle/Platform/VK Play (WebGL)", priority = 2)]
+        [MenuItem("Farkle/Platform/VK Games (WebGL)", priority = 2)]
+        public static void SwitchToVKGames() => Apply(PlatformId.VKGames);
+
+        [MenuItem("Farkle/Platform/VK Play (WebGL)", priority = 3)]
         public static void SwitchToVKPlay() => Apply(PlatformId.VKPlay);
 
-        [MenuItem("Farkle/Platform/RuStore (Android)", priority = 3)]
+        [MenuItem("Farkle/Platform/RuStore (Android)", priority = 4)]
         public static void SwitchToRuStore() => Apply(PlatformId.RuStore);
 
         [MenuItem("Farkle/Platform/Show Current", priority = 20)]

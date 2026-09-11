@@ -13,6 +13,7 @@ namespace Farkle.Platform.Stub
         public PlatformId Platform => PlatformId.Stub;
         public bool IsInitialized { get; private set; }
         public string Language => Application.systemLanguage == SystemLanguage.Russian ? "ru" : "en";
+        public DeviceKind Device => DeviceKinds.FromUnity();
         public bool IsAuthorized { get; private set; }
         public string PlayerId => IsAuthorized ? "stub-player" : null;
         public string PlayerName => IsAuthorized ? "Stub Player" : null;

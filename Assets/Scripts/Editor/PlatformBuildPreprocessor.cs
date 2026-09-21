@@ -42,6 +42,8 @@ namespace Farkle.Editor
                         "Use menu Farkle/Platform to switch.");
             }
 
+            ProjectIdentity.Apply();
+
             if (target == BuildTarget.WebGL)
             {
                 var template = PlatformTargets.WebGLTemplateFor(platform);

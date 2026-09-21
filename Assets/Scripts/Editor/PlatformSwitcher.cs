@@ -64,6 +64,7 @@ namespace Farkle.Editor
             SetDefines(NamedBuildTarget.Android, target == BuildTarget.Android ? platform : PlatformId.Stub);
             SetDefines(NamedBuildTarget.Standalone, PlatformId.Stub);
 
+            ProjectIdentity.Apply();
             PlayerSettings.WebGL.template = PlatformTargets.WebGLTemplateFor(platform);
             PlayerSettings.WebGL.compressionFormat = PlatformTargets.WebGLCompressionFor(platform);
             PlayerSettings.WebGL.decompressionFallback = PlatformTargets.WebGLDecompressionFallbackFor(platform);

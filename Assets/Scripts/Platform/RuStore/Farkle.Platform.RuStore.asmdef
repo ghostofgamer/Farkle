@@ -3,7 +3,8 @@
     "rootNamespace": "Farkle.Platform.RuStore",
     "references": [
         "Farkle.Platform.Abstractions",
-        "UniTask"
+        "UniTask",
+        "YandexMobileAds"
     ],
     "includePlatforms": [
         "Android",

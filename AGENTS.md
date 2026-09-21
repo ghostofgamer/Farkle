@@ -56,7 +56,10 @@ Assets/
       VKPlay/             Farkle.Platform.VKPlay.asmdef   define FARKLE_VKPLAY, платформы WebGL+Editor, заглушки с TODO
         Plugins/            .jslib API VK Play (пока пусто)
       RuStore/            Farkle.Platform.RuStore.asmdef  define FARKLE_RUSTORE, платформы Android+Editor
-        Plugins/Android/    .aar RuStore Billing и рекламной сети (пока пусто)
+                            RuStoreAdsService    Яндекс Реклама (пакет com.yandex.mobileads), предзагрузка обоих форматов
+                            RuStoreAdUnits       идентификаторы рекламных блоков (сейчас демо)
+                            RuStoreLinker.xml    защита сборок Яндекса от стриппинга, только в Android-сборке
+        Plugins/Android/    .aar SDK RuStore, когда понадобятся (пока пусто)
       Installers/         Farkle.Platform.Installers.asmdef
                             PlatformInstaller    единственное место выбора реализации по define
                             PlatformInitializer  IInitializable, запускает InitializeAsync площадки,
@@ -67,6 +70,11 @@ Assets/
                             PlatformBuildPreprocessor проверка перед любой сборкой, падает при несоответствии
                             BuildScript              меню Farkle/Build и CLI-точки входа, результат в Builds/<площадка>
                             VKGamesDeployer          меню Farkle/Deploy: выкладка Builds/VKGames на хостинг VK (dev)
+                            ProjectIdentity          имя компании, название, Android-пакет; выставляются при переключении и сборке
+                            PlatformLinkXml          дополнительный link.xml только для сборки нужной платформы (Android: RuStoreLinker.xml)
+  Plugins/Android/        mainTemplate.gradle, settingsTemplate.gradle, gradleTemplate.properties: пользовательские
+                          gradle-шаблоны Unity. Единственное исключение из запрета Assets/Plugins: Unity ищет их только здесь.
+                          Разделы "Android Resolver" в них пишет EDM4U, руками не править
                             ProjectContextCreator    меню Farkle/Setup/Create ProjectContext
                             PlatformTestSceneCreator меню Farkle/Setup/Create Platform Test Scene, создаёт Scenes/PlatformTest.unity
                             PlatformTargets          соответствие площадка -> BuildTarget, шаблон, папка плагинов
@@ -82,7 +90,8 @@ Assets/
     PlatformTest.unity    тестовая сцена с кнопками, первая в Build Settings, пока нет игровых сцен
     SampleScene.unity     остаток шаблона URP
   link.xml                защита сборок Farkle.* и UniTask от стриппинга
-Packages/manifest.json    UniTask (git). Zenject не здесь, а в Assets из Asset Store
+Packages/manifest.json    UniTask (git), com.yandex.mobileads 8.4.0 (OpenUPM, тянет EDM4U). Zenject не здесь, а в Assets
+                          из Asset Store. Реестр OpenUPM ограничен scope-ами com.yandex.mobileads и com.google.external-dependency-manager
 vk-hosting-config.json    выкладка Builds/VKGames на хостинг VK, ID игры
 ```
 
@@ -116,6 +125,9 @@ Unity -batchmode -quit -projectPath . -buildTarget Android -executeMethod Farkle
 ## Как добавить SDK площадки
 
 1. Нативные файлы (.jslib, .aar, .jar) класть **только** в `Platform/<площадка>/Plugins`. Никогда в `Assets/Plugins`.
+   Исключения: gradle-шаблоны в `Assets/Plugins/Android` (Unity ищет их только там) и SDK, поставляемые UPM-пакетом
+   с собственной `.aar` внутри пакета (Яндекс Реклама). Если SDK площадки нужно защитить от стриппинга,
+   правила кладутся в `Platform/<площадка>/<Имя>Linker.xml` и подключаются через `PlatformLinkXml`, а не в общий `link.xml`.
 2. C#-обёртки класть в `Platform/<площадка>/`, они компилируются только под своим define.
 3. Заменить TODO-реализации сервисов в `Platform/<площадка>/` на вызовы SDK, сигнатуры интерфейсов не менять.
 4. Для web-площадок раскомментировать подключение SDK в `WebGLTemplates/<площадка>/index.html`.
@@ -189,6 +201,26 @@ Unity -batchmode -quit -projectPath . -buildTarget Android -executeMethod Farkle
   после обновления теряются. Всё, что должно сохраниться, хранить через `ICloudSaveService`.
 - Игра, пока выключена в настройках, открывается только администраторам и тестировщикам: `https://vk.com/app<ID>`.
   Реклама до модерации показывается в тестовом режиме.
+
+## Особенности RuStore (Android)
+
+Документация: rustore.ru/help. Факты ниже проверены 11 сентября 2026 года.
+
+- **Своей рекламной сети у RuStore нет.** Реклама идёт через Яндекс Рекламу (пакет `com.yandex.mobileads` 8.4.0).
+  API версии 8: `InterstitialAdLoader` / `RewardedAdLoader`, `new AdRequest(id)`, события `OnAdShown`,
+  `OnAdDismissed`, `OnAdFailedToShow`, `OnRewarded`. Колбэки приходят в главный поток.
+  Демо-блоки `demo-interstitial-yandex` / `demo-rewarded-yandex` работают без регистрации,
+  свои блоки заводятся в Рекламной сети Яндекса (partner.yandex.ru) и прописываются в `RuStoreAdUnits`.
+- Android-зависимости SDK разрешает EDM4U в gradle-шаблоны `Assets/Plugins/Android`.
+- **Лидербордов, имени игрока и авторизации у RuStore нет.** Облачное сохранение есть только в GameCenter SDK (бета):
+  нужен установленный RuStore с входом и подключённый Pay SDK. Пока сохранение локальное (PlayerPrefs).
+- **Платежи (Pay SDK, `ru.rustore.pay`)** только для ИП и юрлиц, заявка подписывается УКЭП. Отложены.
+  Pay SDK работает только с `UnityPlayerActivity`, а Unity 6 по умолчанию ставит GameActivity: при подключении переключить.
+- Maven-репозиторий SDK RuStore сменил адрес: использовать `https://nexus-external.rustore.ru/repository/maven-rustore-exposed`,
+  старый `artifactory-external.vkpartner.ru` не использовать.
+- Публикация: APK или AAB, свой ключ подписи. **Идентификатор пакета после публикации не меняется** (`ProjectIdentity`).
+  Нужны возрастной рейтинг, описание на русском, 3 скриншота, иконка 512×512. Модерация обычно до 3 рабочих дней.
+- Папку `Builds/RuStore/*_BurstDebugInformation_DoNotShip` в магазин не загружать.
 
 ## Мост Unity и JavaScript (Яндекс и Игры ВКонтакте)
 

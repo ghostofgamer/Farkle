@@ -23,12 +23,16 @@ namespace Farkle.Core.Localization
             Add(table, "btn.adsStatus", "Реклама: доступность", "Ads: availability");
             Add(table, "btn.interstitial", "Показать interstitial", "Show interstitial");
             Add(table, "btn.rewarded", "Показать rewarded", "Show rewarded");
+            Add(table, "btn.interstitialRules", "Interstitial по правилам", "Interstitial by rules");
+            Add(table, "btn.reward", "Награда (реклама или даром)", "Reward (ad or free)");
             Add(table, "btn.products", "Магазин: товары", "Store: products");
             Add(table, "btn.buy", "Купить no_ads", "Buy no_ads");
+            Add(table, "btn.entitlements", "Права игрока", "Player entitlements");
+            Add(table, "btn.resetEntitlements", "Сбросить права", "Reset entitlements");
             Add(table, "btn.pending", "Неподтверждённые покупки", "Pending purchases");
             Add(table, "btn.consume", "Подтвердить все", "Consume all");
-            Add(table, "btn.save", "Сохранить", "Save");
-            Add(table, "btn.load", "Загрузить", "Load");
+            Add(table, "btn.save", "Сохранить (+1)", "Save (+1)");
+            Add(table, "btn.load", "Прочитать облако", "Read cloud");
             Add(table, "btn.submitScore", "Лидерборд: отправить очки", "Leaderboard: submit score");
             Add(table, "btn.top", "Лидерборд: топ 10", "Leaderboard: top 10");
             Add(table, "btn.myEntry", "Лидерборд: моя запись", "Leaderboard: my entry");

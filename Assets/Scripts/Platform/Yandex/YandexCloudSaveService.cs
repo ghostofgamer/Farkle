@@ -40,8 +40,10 @@ namespace Farkle.Platform.Yandex
             }
             catch (YandexBridgeException e)
             {
+                // Пробрасываем: "не прочиталось" нельзя путать с "сохранения нет",
+                // иначе игра начнёт с нуля и затрёт прогресс игрока.
                 Debug.LogWarning($"[Yandex] Load failed: {e.Message}");
-                return null;
+                throw;
             }
         }
     }

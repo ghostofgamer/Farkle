@@ -13,7 +13,10 @@ namespace Farkle.Platform
 
         UniTask SaveAsync(string json, CancellationToken cancellationToken = default);
 
-        /// <summary>Возвращает null, если сохранения ещё нет.</summary>
+        /// <summary>
+        /// Возвращает null, если сохранения ещё нет. Если прочитать не удалось, бросает исключение:
+        /// сбой нельзя путать с пустым сохранением, иначе прогресс игрока затрётся.
+        /// </summary>
         UniTask<string> LoadAsync(CancellationToken cancellationToken = default);
     }
 }

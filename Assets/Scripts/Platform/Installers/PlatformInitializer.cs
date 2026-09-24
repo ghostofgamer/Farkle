@@ -1,7 +1,9 @@
 using System;
 using Cysharp.Threading.Tasks;
 using Farkle.Core.Localization;
+using Farkle.Game.Monetization;
 using Farkle.Game.Quality;
+using Farkle.Game.Saves;
 using UnityEngine;
 using Zenject;
 
@@ -9,8 +11,9 @@ namespace Farkle.Platform.Installers
 {
     /// <summary>
     /// Запускает инициализацию SDK площадки сразу после сборки контейнера,
-    /// выставляет язык интерфейса и качество графики по данным площадки
-    /// и сообщает площадке, что игра загрузилась.
+    /// выставляет язык интерфейса и качество графики по данным площадки,
+    /// загружает сохранение и сообщает площадке, что игра загрузилась.
+    /// После сигнала готовности выдаёт покупки, оплаченные в прошлых сессиях.
     ///
     /// Сигнал готовности обязателен для модерации Яндекс Игр: до него платформа
     /// держит свой лоадер в состоянии ожидания и считает SDK невстроенным.
@@ -22,12 +25,21 @@ namespace Farkle.Platform.Installers
         private readonly IPlatformService _platform;
         private readonly ILocalization _localization;
         private readonly IQualityService _quality;
+        private readonly ISaveStore _saves;
+        private readonly IPurchaseFlow _purchases;
 
-        public PlatformInitializer(IPlatformService platform, ILocalization localization, IQualityService quality)
+        public PlatformInitializer(
+            IPlatformService platform,
+            ILocalization localization,
+            IQualityService quality,
+            ISaveStore saves,
+            IPurchaseFlow purchases)
         {
             _platform = platform;
             _localization = localization;
             _quality = quality;
+            _saves = saves;
+            _purchases = purchases;
         }
 
         public void Initialize()
@@ -64,10 +76,31 @@ namespace Farkle.Platform.Installers
                 Debug.LogError($"[Platform] Quality setup failed: {e.Message}");
             }
 
+            // Первый экран игры показывается уже с данными игрока. Хранилище площадки
+            // доступно только после инициализации SDK. Загрузка ограничена по времени внутри SaveStore.
+            try
+            {
+                await _saves.LoadAsync();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[Platform] Save load failed: {e.Message}");
+            }
+
             // Сообщаем о готовности даже после неудачной инициализации:
             // если SDK жив, но упал один из вызовов, лоадер платформы всё равно нужно закрыть.
             _platform.NotifyGameReady();
             Debug.Log($"[Platform] {_platform.Platform} ready, initialized={_platform.IsInitialized}");
+
+            // Восстановление покупок ходит в SDK платежей и может быть долгим, поэтому после сигнала готовности.
+            try
+            {
+                await _purchases.RestoreAsync();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[Platform] Purchase restore failed: {e.Message}");
+            }
         }
     }
 }

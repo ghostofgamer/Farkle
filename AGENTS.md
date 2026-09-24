@@ -18,6 +18,14 @@ VK Play (WebGL, раздел браузерных игр), RuStore (Android). П
 - **Качество графики** игра получает только через `IQualityService` (уровни Low/Medium/High).
   Уровень выбирается по `IPlatformService.Device` и включает Quality Level Unity с тем же смыслом.
   Что меняется на уровне (URP-ассет, render scale, ужатие текстур), настраивается в Project Settings > Quality, не в коде.
+- **Сохранение только через `ISaveStore`**, не через `ICloudSaveService` напрямую. Каждая система игры берёт свой раздел
+  (`Get<T>(key)`, `[Serializable]`-класс для JsonUtility). Переименовать или перенести поле раздела можно только
+  вместе с новой `ISaveMigration` (FromVersion = текущая версия раздела). Старые миграции не удалять.
+  Добавлять новые поля можно без миграции.
+- **Реклама и покупки в игре только через общий слой:** `IInterstitialService.TryShowAsync(trigger)` на естественных паузах
+  (конец партии, перезапуск), `IRewardService.RequestAsync(placement)` для наград, `IPurchaseFlow` для покупок,
+  `IEntitlements` для проверки прав. Прямые вызовы `IAdsService` / `IPurchaseService` из игры запрещены:
+  иначе обходятся частота рекламы, `no_ads` и защита покупок. Своё для каждой игры задаётся в `MonetizationConfig`.
 - **Stripping Level High + `Assets/link.xml`.** Любая новая сборка, чьи классы биндятся в Zenject или вызываются из JS/Android через reflection, добавляется в `link.xml` с `preserve="all"`.
 - Каждое изменение проекта записывается в `README.md` (раздел «Журнал изменений»). Этот файл держим актуальным при изменении структуры.
 - Комментарии и документация на русском, идентификаторы на английском.
@@ -32,6 +40,14 @@ Assets/
     Game/                 Farkle.Game.asmdef       сцены, UI, презентация; ссылается на Core и Abstractions
       Debugging/PlatformTestPanel.cs  отладочная панель: кнопка на каждый метод платформенных интерфейсов, UI строится в коде
       Quality/              IQualityService, QualityService, QualityTier: уровень качества по типу устройства
+      Saves/                ISaveStore, SaveStore, ISaveMigration: сохранение по разделам с версиями поверх ICloudSaveService
+      Monetization/         MonetizationConfig    товары, частота рекламы, правила наград: правится в каждой игре
+                            IEntitlements         права игрока (no_ads и др.) в разделе сохранения
+                            IPurchaseFlow         покупка, выдача, восстановление при запуске
+                            IRewardService        награда за рекламу или бесплатно по правилам
+                            IInterstitialService  межстраничная реклама по поводу с ограничением частоты
+                            AdPauseController     пауза и звук на время рекламы и при потере фокуса
+      GameServicesInstaller.cs  биндинги общего слоя, вызывается из PlatformInstaller
     Platform/
       Abstractions/       Farkle.Platform.Abstractions.asmdef
                             IPlatformService     жизненный цикл SDK, язык, тип устройства, авторизация, GameReady/GameplayStart/Stop
@@ -53,7 +69,7 @@ Assets/
                             VKGamesBridgeReceiver GameObject "VKGamesSdkBridge"
                             VKGamesBridgeDto, VKGamesSession
         Plugins/            VKGamesBridge.jslib   вызовы VK Bridge: реклама, хранилище
-      VKPlay/             Farkle.Platform.VKPlay.asmdef   define FARKLE_VKPLAY, платформы WebGL+Editor, заглушки с TODO
+      VKPlay/             Farkle.Platform.VKPlay.asmdef   define FARKLE_VKPLAY, заглушки с TODO; площадка не планируется (24.09)
         Plugins/            .jslib API VK Play (пока пусто)
       RuStore/            Farkle.Platform.RuStore.asmdef  define FARKLE_RUSTORE, платформы Android+Editor
                             RuStoreAdsService    Яндекс Реклама (пакет com.yandex.mobileads), предзагрузка обоих форматов
@@ -63,7 +79,8 @@ Assets/
       Installers/         Farkle.Platform.Installers.asmdef
                             PlatformInstaller    единственное место выбора реализации по define
                             PlatformInitializer  IInitializable, запускает InitializeAsync площадки,
-                                                 затем выставляет язык и качество, затем NotifyGameReady
+                                                 затем выставляет язык и качество, загружает сохранение,
+                                                 затем NotifyGameReady, затем восстанавливает покупки
     Editor/               Farkle.Editor.asmdef
                             PlatformSwitcher         меню Farkle/Platform: target, defines, шаблон, плагины
                             PlatformPluginToggler    включает .jslib/.aar только активной площадки

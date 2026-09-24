@@ -1,4 +1,5 @@
 using Farkle.Core.Localization;
+using Farkle.Game;
 using Farkle.Game.Quality;
 using Farkle.Platform.Stub;
 using Zenject;
@@ -52,6 +53,9 @@ namespace Farkle.Platform.Installers
 
             // Качество графики выбирается по типу устройства от площадки, см. PlatformInitializer.
             Container.Bind<IQualityService>().To<QualityService>().AsSingle();
+
+            // Сохранение, права, покупки, награды и правила рекламы: общий слой игры поверх площадки.
+            GameServicesInstaller.Install(Container);
 
             Container.BindInterfacesTo<PlatformInitializer>().AsSingle();
         }

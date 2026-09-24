@@ -43,8 +43,10 @@ namespace Farkle.Platform.VKGames
             }
             catch (VKGamesBridgeException e)
             {
+                // Пробрасываем: "не прочиталось" нельзя путать с "сохранения нет",
+                // иначе игра начнёт с нуля и затрёт прогресс игрока.
                 Debug.LogWarning($"[VKGames] Load failed: {e.Message}");
-                return null;
+                throw;
             }
         }
     }

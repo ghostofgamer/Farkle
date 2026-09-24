@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using Cysharp.Threading.Tasks;
 using Farkle.Core.Localization;
+using Farkle.Game.Monetization;
 using Farkle.Game.Quality;
+using Farkle.Game.Saves;
 using Farkle.Platform;
 using UnityEngine;
 using UnityEngine.UI;
@@ -19,7 +21,9 @@ namespace Farkle.Game.Debugging
     public sealed class PlatformTestPanel : MonoBehaviour
     {
         private const int MaxLogLines = 40;
-        private const string SaveCounterKey = "farkle.test.counter";
+
+        /// <summary>Раздел сохранения, который пишет панель.</summary>
+        private const string TestSaveKey = "test_panel";
 
         /// <summary>Техническое имя лидерборда, должно совпадать с Консолью разработчика.</summary>
         private const string LeaderboardId = "score";
@@ -31,6 +35,11 @@ namespace Farkle.Game.Debugging
         private ILeaderboardService _leaderboards;
         private ILocalization _localization;
         private IQualityService _quality;
+        private ISaveStore _saveStore;
+        private IEntitlements _entitlements;
+        private IPurchaseFlow _purchaseFlow;
+        private IRewardService _rewards;
+        private IInterstitialService _interstitials;
 
         private Font _font;
         private Text _logText;
@@ -46,7 +55,7 @@ namespace Farkle.Game.Debugging
         /// </summary>
         private static readonly string[] MirroredLogPrefixes =
         {
-            "[Platform]", "[Quality]", "[Stub]", "[Yandex]", "[VKGames]", "[VKPlay]", "[RuStore]",
+            "[Platform]", "[Quality]", "[Saves]", "[Purchases]", "[Ads]", "[Stub]", "[Yandex]", "[VKGames]", "[VKPlay]", "[RuStore]",
         };
 
         private Action _onAdOpened;
@@ -61,8 +70,18 @@ namespace Farkle.Game.Debugging
             ICloudSaveService saves,
             ILeaderboardService leaderboards,
             ILocalization localization,
-            IQualityService quality)
+            IQualityService quality,
+            ISaveStore saveStore,
+            IEntitlements entitlements,
+            IPurchaseFlow purchaseFlow,
+            IRewardService rewards,
+            IInterstitialService interstitials)
         {
+            _saveStore = saveStore;
+            _entitlements = entitlements;
+            _purchaseFlow = purchaseFlow;
+            _rewards = rewards;
+            _interstitials = interstitials;
             _platform = platform;
             _ads = ads;
             _purchases = purchases;
@@ -146,6 +165,11 @@ namespace Farkle.Game.Debugging
             if (_leaderboards == null) missing.Add(nameof(ILeaderboardService));
             if (_localization == null) missing.Add(nameof(ILocalization));
             if (_quality == null) missing.Add(nameof(IQualityService));
+            if (_saveStore == null) missing.Add(nameof(ISaveStore));
+            if (_entitlements == null) missing.Add(nameof(IEntitlements));
+            if (_purchaseFlow == null) missing.Add(nameof(IPurchaseFlow));
+            if (_rewards == null) missing.Add(nameof(IRewardService));
+            if (_interstitials == null) missing.Add(nameof(IInterstitialService));
 
             if (missing.Count == 0)
                 return;
@@ -231,12 +255,28 @@ namespace Farkle.Game.Debugging
             var root = (RectTransform)transform;
             Stretch(root);
 
-            var buttons = CreateRect("Buttons", root, new Vector2(0f, 0.42f), Vector2.one);
+            // Кнопок больше, чем помещается на экране телефона, поэтому область прокручивается.
+            var viewport = CreateRect("Buttons", root, new Vector2(0f, 0.42f), Vector2.one);
+            viewport.gameObject.AddComponent<RectMask2D>();
+            var viewportImage = viewport.gameObject.AddComponent<Image>();
+            viewportImage.color = new Color(0f, 0f, 0f, 0f);
+
+            var buttons = CreateRect("Content", viewport, new Vector2(0f, 1f), Vector2.one);
+            buttons.pivot = new Vector2(0.5f, 1f);
             var grid = buttons.gameObject.AddComponent<GridLayoutGroup>();
-            grid.cellSize = new Vector2(300f, 64f);
+            grid.cellSize = new Vector2(290f, 60f);
             grid.spacing = new Vector2(10f, 10f);
             grid.padding = new RectOffset(16, 16, 16, 16);
             grid.childAlignment = TextAnchor.UpperLeft;
+            var fitter = buttons.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var scroll = viewport.gameObject.AddComponent<ScrollRect>();
+            scroll.content = buttons;
+            scroll.viewport = viewport;
+            scroll.horizontal = false;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 30f;
 
             var logArea = CreateRect("Log", root, Vector2.zero, new Vector2(1f, 0.42f));
             var background = logArea.gameObject.AddComponent<Image>();
@@ -263,9 +303,13 @@ namespace Farkle.Game.Debugging
             AddButton(buttons, "btn.adsStatus", () => { Log($"interstitial={_ads.IsInterstitialAvailable} rewarded={_ads.IsRewardedAvailable}"); return UniTask.CompletedTask; });
             AddButton(buttons, "btn.interstitial", ShowInterstitial);
             AddButton(buttons, "btn.rewarded", ShowRewarded);
+            AddButton(buttons, "btn.interstitialRules", ShowInterstitialByRules);
+            AddButton(buttons, "btn.reward", RequestReward);
 
             AddButton(buttons, "btn.products", GetProducts);
-            AddButton(buttons, "btn.buy", () => Purchase("no_ads"));
+            AddButton(buttons, "btn.buy", () => Purchase(EntitlementIds.NoAds));
+            AddButton(buttons, "btn.entitlements", () => { LogEntitlements(); return UniTask.CompletedTask; });
+            AddButton(buttons, "btn.resetEntitlements", ResetEntitlements);
             AddButton(buttons, "btn.pending", GetPending);
             AddButton(buttons, "btn.consume", ConsumeAll);
 
@@ -398,6 +442,11 @@ namespace Farkle.Game.Debugging
                 $"authorized={_platform.IsAuthorized} player={_platform.PlayerName ?? "-"}");
             Log($"purchases={_purchases.IsAvailable} cloudSave={_saves.IsAvailable} leaderboard={_leaderboards.IsAvailable}");
 
+            if (_saveStore != null)
+                Log($"saveLoaded={_saveStore.IsLoaded} cloudWriteBlocked={_saveStore.IsCloudWriteBlocked} rewardOffer={_rewards?.CanOffer}");
+
+            LogEntitlements();
+
             if (_quality != null)
                 LogQuality();
         }
@@ -420,6 +469,37 @@ namespace Farkle.Game.Debugging
             Log($"rewarded result={result}");
         }
 
+        /// <summary>Повод для рекламы, как его подаёт игра: правила решают, показывать ли.</summary>
+        private async UniTask ShowInterstitialByRules()
+        {
+            var shown = await _interstitials.TryShowAsync("test_panel");
+            Log($"interstitial by rules shown={shown}");
+        }
+
+        /// <summary>Награда, как её просит игра: реклама или бесплатно по правилам.</summary>
+        private async UniTask RequestReward()
+        {
+            var outcome = await _rewards.RequestAsync("test_panel");
+            Log($"reward outcome={outcome} granted={outcome.IsGranted()}");
+        }
+
+        private void LogEntitlements()
+        {
+            if (_entitlements == null)
+                return;
+
+            Log($"entitlements=[{string.Join(", ", _entitlements.All)}]");
+        }
+
+        private async UniTask ResetEntitlements()
+        {
+            foreach (var entitlement in new List<string>(_entitlements.All))
+                _entitlements.Revoke(entitlement);
+
+            await _saveStore.SaveNowAsync();
+            LogEntitlements();
+        }
+
         private async UniTask GetProducts()
         {
             var products = await _purchases.GetProductsAsync();
@@ -430,10 +510,9 @@ namespace Farkle.Game.Debugging
 
         private async UniTask Purchase(string productId)
         {
-            var result = await _purchases.PurchaseAsync(productId);
-            Log(result.Success
-                ? $"purchased {result.Purchase.ProductId}, token={Short(result.Purchase.PurchaseToken)}"
-                : $"purchase failed: {result.Error}");
+            var outcome = await _purchaseFlow.BuyAsync(productId);
+            Log($"purchase {productId}: {outcome}");
+            LogEntitlements();
         }
 
         private async UniTask GetPending()
@@ -459,19 +538,29 @@ namespace Farkle.Game.Debugging
             _lastPending.Clear();
         }
 
+        /// <summary>Пишет раздел через ISaveStore, как это будет делать игра: счётчик растёт между запусками.</summary>
         private async UniTask Save()
         {
-            var counter = PlayerPrefs.GetInt(SaveCounterKey, 0) + 1;
-            PlayerPrefs.SetInt(SaveCounterKey, counter);
-            var json = $"{{\"counter\":{counter},\"savedAt\":\"{DateTime.Now:HH:mm:ss}\"}}";
-            await _saves.SaveAsync(json);
-            Log($"saved: {json}");
+            await _saveStore.WaitLoadedAsync();
+            var data = _saveStore.Get<TestSaveData>(TestSaveKey);
+            data.counter++;
+            data.savedAt = DateTime.Now.ToString("HH:mm:ss");
+            await _saveStore.SaveNowAsync();
+            Log($"saved section '{TestSaveKey}' v{_saveStore.GetVersion(TestSaveKey)}: counter={data.counter} savedAt={data.savedAt}");
         }
 
+        /// <summary>Читает облако напрямую, чтобы увидеть, что там лежит на самом деле.</summary>
         private async UniTask Load()
         {
             var json = await _saves.LoadAsync();
-            Log(json == null ? Translate("log.noSave") : $"loaded: {json}");
+            Log(json == null ? Translate("log.noSave") : $"cloud ({json.Length}): {json}");
+        }
+
+        [Serializable]
+        internal sealed class TestSaveData
+        {
+            public int counter;
+            public string savedAt;
         }
 
         private async UniTask SubmitScore()

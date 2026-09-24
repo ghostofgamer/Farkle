@@ -3,7 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.VKPlay
+namespace Base.Platform.VKPlay
 {
     /// <summary>
     /// Реклама VK Play. TODO: VKWebAppShowNativeAds с ad_format "interstitial" и "reward",

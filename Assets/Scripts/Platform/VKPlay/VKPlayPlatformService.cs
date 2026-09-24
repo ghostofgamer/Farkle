@@ -2,7 +2,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.VKPlay
+namespace Base.Platform.VKPlay
 {
     /// <summary>
     /// VK Play (vkplay.ru), раздел браузерных игр. У площадки свой API и своя авторизация,

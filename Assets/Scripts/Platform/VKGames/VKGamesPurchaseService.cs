@@ -3,7 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.VKGames
+namespace Base.Platform.VKGames
 {
     /// <summary>
     /// Покупки VK (VKWebAppShowOrderBox) без своего сервера невозможны: VK запрашивает описание товара

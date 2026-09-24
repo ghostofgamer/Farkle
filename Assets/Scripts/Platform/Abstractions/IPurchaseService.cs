@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 
-namespace Farkle.Platform
+namespace Base.Platform
 {
     public sealed class ProductInfo
     {

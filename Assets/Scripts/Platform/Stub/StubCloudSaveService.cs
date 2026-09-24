@@ -2,12 +2,12 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.Stub
+namespace Base.Platform.Stub
 {
     /// <summary>Сохранение в PlayerPrefs вместо облака.</summary>
     public sealed class StubCloudSaveService : ICloudSaveService
     {
-        private const string Key = "farkle.stub.save";
+        private const string Key = "base.stub.save";
 
         public bool IsAvailable => true;
 

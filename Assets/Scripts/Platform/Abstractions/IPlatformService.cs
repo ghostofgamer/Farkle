@@ -1,7 +1,7 @@
 using System.Threading;
 using Cysharp.Threading.Tasks;
 
-namespace Farkle.Platform
+namespace Base.Platform
 {
     /// <summary>
     /// Жизненный цикл площадки и данные игрока.

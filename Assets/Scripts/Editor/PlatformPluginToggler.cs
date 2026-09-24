@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using Farkle.Platform;
+using Base.Platform;
 using UnityEditor;
 
-namespace Farkle.Editor
+namespace Base.Editor
 {
     /// <summary>
     /// Включает нативные плагины (.jslib, .aar, .jar) только для активной площадки.

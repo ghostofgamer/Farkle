@@ -3,7 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.VKPlay
+namespace Base.Platform.VKPlay
 {
     /// <summary>
     /// Покупки VK Play. TODO: VKWebAppShowOrderBox (type "item"), список товаров и подтверждение

@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Farkle.Platform;
+using Base.Platform;
 using UnityEditor;
 using UnityEditor.Build;
 
-namespace Farkle.Editor
+namespace Base.Editor
 {
     /// <summary>Соответствие площадки целевой платформе Unity, шаблону WebGL и папке плагинов.</summary>
     public static class PlatformTargets
@@ -80,14 +80,14 @@ namespace Farkle.Editor
             PlatformId.Yandex, PlatformId.VKPlay, PlatformId.RuStore, PlatformId.VKGames,
         };
 
-        /// <summary>Определяет площадку по списку defines. Бросает исключение, если задано больше одного FARKLE_*.</summary>
+        /// <summary>Определяет площадку по списку defines. Бросает исключение, если задано больше одного BASE_*.</summary>
         public static PlatformId ParseDefines(IEnumerable<string> defines)
         {
             var found = SdkPlatforms.Where(p => defines.Contains(PlatformDefines.For(p))).ToArray();
             if (found.Length > 1)
                 throw new InvalidOperationException(
                     "More than one platform define is set: " + string.Join(", ", found.Select(PlatformDefines.For)) +
-                    ". Use menu Farkle/Platform to pick exactly one.");
+                    ". Use menu Base/Platform to pick exactly one.");
             return found.Length == 1 ? found[0] : PlatformId.Stub;
         }
 

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Farkle.Platform.Yandex
+namespace Base.Platform.Yandex
 {
     /// <summary>
     /// Приёмник сообщений из JavaScript. Имя GameObject и имена методов

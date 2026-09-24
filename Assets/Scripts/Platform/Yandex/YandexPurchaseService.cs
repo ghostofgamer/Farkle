@@ -4,7 +4,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.Yandex
+namespace Base.Platform.Yandex
 {
     /// <summary>
     /// Покупки Яндекс Игр. Объект payments подгружается лениво при первом обращении:

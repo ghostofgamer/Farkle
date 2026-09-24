@@ -2,7 +2,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.Yandex
+namespace Base.Platform.Yandex
 {
     /// <summary>
     /// Облачное сохранение Яндекс Игр: player.setData и player.getData.

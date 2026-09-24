@@ -4,7 +4,7 @@ using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEditor.UnityLinker;
 
-namespace Farkle.Editor
+namespace Base.Editor
 {
     /// <summary>
     /// Дополнительные правила стриппинга только для сборки конкретной платформы.

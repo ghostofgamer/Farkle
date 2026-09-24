@@ -360,7 +360,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b00e72f4fac13674c9796ddfa36ded96, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Farkle.Game::Farkle.Game.Debugging.PlatformTestPanel
+  m_EditorClassIdentifier: Base.Services::Base.Services.Debugging.PlatformTestPanel
 --- !u!1 &1642425532
 GameObject:
   m_ObjectHideFlags: 0

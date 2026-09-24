@@ -3,7 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.VKGames
+namespace Base.Platform.VKGames
 {
     /// <summary>
     /// Нативная реклама VK: VKWebAppShowNativeAds с форматами interstitial и reward.

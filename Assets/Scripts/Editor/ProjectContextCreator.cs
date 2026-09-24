@@ -1,10 +1,10 @@
 using System.IO;
-using Farkle.Platform.Installers;
+using Base.Platform.Installers;
 using UnityEditor;
 using UnityEngine;
 using Zenject;
 
-namespace Farkle.Editor
+namespace Base.Editor
 {
     /// <summary>
     /// Создаёт Assets/Resources/ProjectContext.prefab с PlatformInstaller.
@@ -15,13 +15,13 @@ namespace Farkle.Editor
         private const string Folder = "Assets/Resources";
         private const string Path = Folder + "/ProjectContext.prefab";
 
-        [MenuItem("Farkle/Setup/Create ProjectContext", priority = 0)]
+        [MenuItem("Base/Setup/Create ProjectContext", priority = 0)]
         public static void Create()
         {
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(Path);
             if (existing != null)
             {
-                Debug.Log("[Farkle] ProjectContext already exists: " + Path);
+                Debug.Log("[Base] ProjectContext already exists: " + Path);
                 Selection.activeObject = existing;
                 return;
             }
@@ -39,7 +39,7 @@ namespace Farkle.Editor
                 var prefab = PrefabUtility.SaveAsPrefabAsset(go, Path);
                 AssetDatabase.SaveAssets();
                 Selection.activeObject = prefab;
-                Debug.Log("[Farkle] Created " + Path);
+                Debug.Log("[Base] Created " + Path);
             }
             finally
             {

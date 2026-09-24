@@ -5,7 +5,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.VKGames
+namespace Base.Platform.VKGames
 {
     /// <summary>Ошибка вызова VK Bridge. Текст приходит из JS.</summary>
     public sealed class VKGamesBridgeException : Exception

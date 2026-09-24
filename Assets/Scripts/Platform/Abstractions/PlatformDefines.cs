@@ -1,4 +1,4 @@
-namespace Farkle.Platform
+namespace Base.Platform
 {
     /// <summary>
     /// Scripting defines, по которым выбирается площадка.
@@ -6,10 +6,10 @@ namespace Farkle.Platform
     /// </summary>
     public static class PlatformDefines
     {
-        public const string Yandex = "FARKLE_YANDEX";
-        public const string VKPlay = "FARKLE_VKPLAY";
-        public const string RuStore = "FARKLE_RUSTORE";
-        public const string VKGames = "FARKLE_VKGAMES";
+        public const string Yandex = "BASE_YANDEX";
+        public const string VKPlay = "BASE_VKPLAY";
+        public const string RuStore = "BASE_RUSTORE";
+        public const string VKGames = "BASE_VKGAMES";
 
         public static readonly string[] All = { Yandex, VKPlay, RuStore, VKGames };
 

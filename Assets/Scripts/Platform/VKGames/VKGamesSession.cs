@@ -1,6 +1,6 @@
 using System;
 
-namespace Farkle.Platform.VKGames
+namespace Base.Platform.VKGames
 {
     /// <summary>
     /// Общее состояние сессии Игр ВКонтакте: заполняется при инициализации,

@@ -2,7 +2,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.RuStore
+namespace Base.Platform.RuStore
 {
     /// <summary>
     /// RuStore, нативный Android. У RuStore нет единого игрового SDK:

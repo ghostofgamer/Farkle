@@ -3,7 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.RuStore
+namespace Base.Platform.RuStore
 {
     /// <summary>
     /// У RuStore нет лидербордов. TODO: свой бэкенд или локальная таблица рекордов.

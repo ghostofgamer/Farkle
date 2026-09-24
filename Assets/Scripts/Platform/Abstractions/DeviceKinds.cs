@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Farkle.Platform
+namespace Base.Platform
 {
     public static class DeviceKinds
     {

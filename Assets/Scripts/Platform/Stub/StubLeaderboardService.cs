@@ -3,7 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.Stub
+namespace Base.Platform.Stub
 {
     /// <summary>Таблица лидеров в памяти: несколько ботов плюс лучший результат игрока.</summary>
     public sealed class StubLeaderboardService : ILeaderboardService

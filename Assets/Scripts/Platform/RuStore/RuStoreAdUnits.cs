@@ -1,4 +1,4 @@
-namespace Farkle.Platform.RuStore
+namespace Base.Platform.RuStore
 {
     /// <summary>
     /// Рекламные блоки Яндекс Рекламы для Android-сборки.

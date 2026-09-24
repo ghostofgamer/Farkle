@@ -3,7 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.Yandex
+namespace Base.Platform.Yandex
 {
     /// <summary>
     /// Лидерборды Яндекс Игр. Отправка очков и своя запись доступны только

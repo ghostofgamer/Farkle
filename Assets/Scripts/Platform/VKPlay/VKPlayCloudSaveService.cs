@@ -2,7 +2,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.VKPlay
+namespace Base.Platform.VKPlay
 {
     /// <summary>
     /// Облачное сохранение VK Play. TODO: VKWebAppStorageSet / VKWebAppStorageGet.

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Farkle.Game.Debugging;
+using Base.Services.Debugging;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -10,24 +10,24 @@ using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 using Zenject;
 
-namespace Farkle.Editor
+namespace Base.Editor
 {
     /// <summary>
     /// Создаёт Assets/Scenes/PlatformTest.unity: камера, Canvas, EventSystem с Input System,
     /// Zenject SceneContext и PlatformTestPanel. Ставит сцену первой в Build Settings.
-    /// Меню Farkle/Setup/Create Platform Test Scene.
+    /// Меню Base/Setup/Create Platform Test Scene.
     /// </summary>
     public static class PlatformTestSceneCreator
     {
         private const string ScenesFolder = "Assets/Scenes";
         private const string ScenePath = ScenesFolder + "/PlatformTest.unity";
 
-        [MenuItem("Farkle/Setup/Create Platform Test Scene", priority = 1)]
+        [MenuItem("Base/Setup/Create Platform Test Scene", priority = 1)]
         public static void Create()
         {
             if (File.Exists(ScenePath))
             {
-                if (!EditorUtility.DisplayDialog("Farkle", ScenePath + " уже существует. Пересоздать?", "Пересоздать", "Отмена"))
+                if (!EditorUtility.DisplayDialog("Base", ScenePath + " уже существует. Пересоздать?", "Пересоздать", "Отмена"))
                     return;
             }
 
@@ -51,7 +51,7 @@ namespace Farkle.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddToBuildSettings();
 
-            Debug.Log("[Farkle] Created " + ScenePath + " and set it as the first scene in Build Settings");
+            Debug.Log("[Base] Created " + ScenePath + " and set it as the first scene in Build Settings");
         }
 
         private static void CreateCamera()

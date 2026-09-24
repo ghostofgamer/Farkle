@@ -1,46 +1,46 @@
-using Farkle.Core.Localization;
-using Farkle.Game;
-using Farkle.Game.Quality;
-using Farkle.Platform.Stub;
+using Base.Core.Localization;
+using Base.Services;
+using Base.Services.Quality;
+using Base.Platform.Stub;
 using Zenject;
 
-namespace Farkle.Platform.Installers
+namespace Base.Platform.Installers
 {
     /// <summary>
     /// Единственное место, где выбирается реализация площадки.
     /// В редакторе всегда Stub: SDK площадок работают только в реальном билде.
-    /// В билде реализация выбирается по define FARKLE_YANDEX / FARKLE_VKPLAY / FARKLE_RUSTORE / FARKLE_VKGAMES,
+    /// В билде реализация выбирается по define BASE_YANDEX / BASE_VKPLAY / BASE_RUSTORE / BASE_VKGAMES,
     /// без define используется Stub.
     /// </summary>
     public sealed class PlatformInstaller : MonoInstaller
     {
         public override void InstallBindings()
         {
-#if UNITY_EDITOR || !(FARKLE_YANDEX || FARKLE_VKPLAY || FARKLE_RUSTORE || FARKLE_VKGAMES)
+#if UNITY_EDITOR || !(BASE_YANDEX || BASE_VKPLAY || BASE_RUSTORE || BASE_VKGAMES)
             Container.Bind<IPlatformService>().To<StubPlatformService>().AsSingle();
             Container.Bind<IAdsService>().To<StubAdsService>().AsSingle();
             Container.Bind<IPurchaseService>().To<StubPurchaseService>().AsSingle();
             Container.Bind<ICloudSaveService>().To<StubCloudSaveService>().AsSingle();
             Container.Bind<ILeaderboardService>().To<StubLeaderboardService>().AsSingle();
-#elif FARKLE_YANDEX
+#elif BASE_YANDEX
             Container.Bind<IPlatformService>().To<Yandex.YandexPlatformService>().AsSingle();
             Container.Bind<IAdsService>().To<Yandex.YandexAdsService>().AsSingle();
             Container.Bind<IPurchaseService>().To<Yandex.YandexPurchaseService>().AsSingle();
             Container.Bind<ICloudSaveService>().To<Yandex.YandexCloudSaveService>().AsSingle();
             Container.Bind<ILeaderboardService>().To<Yandex.YandexLeaderboardService>().AsSingle();
-#elif FARKLE_VKPLAY
+#elif BASE_VKPLAY
             Container.Bind<IPlatformService>().To<VKPlay.VKPlayPlatformService>().AsSingle();
             Container.Bind<IAdsService>().To<VKPlay.VKPlayAdsService>().AsSingle();
             Container.Bind<IPurchaseService>().To<VKPlay.VKPlayPurchaseService>().AsSingle();
             Container.Bind<ICloudSaveService>().To<VKPlay.VKPlayCloudSaveService>().AsSingle();
             Container.Bind<ILeaderboardService>().To<VKPlay.VKPlayLeaderboardService>().AsSingle();
-#elif FARKLE_RUSTORE
+#elif BASE_RUSTORE
             Container.Bind<IPlatformService>().To<RuStore.RuStorePlatformService>().AsSingle();
             Container.Bind<IAdsService>().To<RuStore.RuStoreAdsService>().AsSingle();
             Container.Bind<IPurchaseService>().To<RuStore.RuStorePurchaseService>().AsSingle();
             Container.Bind<ICloudSaveService>().To<RuStore.RuStoreCloudSaveService>().AsSingle();
             Container.Bind<ILeaderboardService>().To<RuStore.RuStoreLeaderboardService>().AsSingle();
-#elif FARKLE_VKGAMES
+#elif BASE_VKGAMES
             Container.Bind<IPlatformService>().To<VKGames.VKGamesPlatformService>().AsSingle();
             Container.Bind<IAdsService>().To<VKGames.VKGamesAdsService>().AsSingle();
             Container.Bind<IPurchaseService>().To<VKGames.VKGamesPurchaseService>().AsSingle();

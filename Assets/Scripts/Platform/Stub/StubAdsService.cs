@@ -3,7 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.Stub
+namespace Base.Platform.Stub
 {
     /// <summary>
     /// Имитация рекламы: короткая задержка вместо ролика, награда выдаётся всегда.

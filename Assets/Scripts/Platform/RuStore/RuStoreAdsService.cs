@@ -5,7 +5,7 @@ using UnityEngine;
 using YandexMobileAds;
 using YandexMobileAds.Base;
 
-namespace Farkle.Platform.RuStore
+namespace Base.Platform.RuStore
 {
     /// <summary>
     /// Реклама Android-сборки через Яндекс Рекламу (пакет com.yandex.mobileads 8.4.0 из OpenUPM).

@@ -5,7 +5,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.Yandex
+namespace Base.Platform.Yandex
 {
     /// <summary>Ошибка вызова Yandex Games SDK. Текст приходит из JS.</summary>
     public sealed class YandexBridgeException : Exception

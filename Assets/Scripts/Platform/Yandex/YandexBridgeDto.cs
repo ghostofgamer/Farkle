@@ -1,6 +1,6 @@
 using System;
 
-namespace Farkle.Platform.Yandex
+namespace Base.Platform.Yandex
 {
     /// <summary>
     /// Классы для разбора ответов моста через JsonUtility.

@@ -1,16 +1,16 @@
 using System.Collections.Generic;
-using Farkle.Platform;
+using Base.Platform;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Profile;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
-namespace Farkle.Editor
+namespace Base.Editor
 {
     /// <summary>
     /// Проверка перед любой сборкой (меню Build, Build Profiles, BuildScript, CLI):
-    /// ровно один FARKLE_* define, целевая платформа соответствует площадке,
+    /// ровно один BASE_* define, целевая платформа соответствует площадке,
     /// WebGL-шаблон и сжатие выставлены, нативные плагины чужих площадок выключены.
     /// При несоответствии сборка останавливается с понятным сообщением.
     /// </summary>
@@ -38,8 +38,8 @@ namespace Farkle.Editor
                 var expected = PlatformTargets.BuildTargetFor(platform);
                 if (expected != target)
                     throw new BuildFailedException(
-                        $"[Farkle] Platform {platform} requires build target {expected}, but building for {target}. " +
-                        "Use menu Farkle/Platform to switch.");
+                        $"[Base] Platform {platform} requires build target {expected}, but building for {target}. " +
+                        "Use menu Base/Platform to switch.");
             }
 
             ProjectIdentity.Apply();
@@ -49,7 +49,7 @@ namespace Farkle.Editor
                 var template = PlatformTargets.WebGLTemplateFor(platform);
                 if (PlayerSettings.WebGL.template != template)
                 {
-                    Debug.Log($"[Farkle] Setting WebGL template to {template}");
+                    Debug.Log($"[Base] Setting WebGL template to {template}");
                     PlayerSettings.WebGL.template = template;
                 }
 
@@ -58,7 +58,7 @@ namespace Farkle.Editor
                 var fallback = PlatformTargets.WebGLDecompressionFallbackFor(platform);
                 if (PlayerSettings.WebGL.compressionFormat != compression || PlayerSettings.WebGL.decompressionFallback != fallback)
                 {
-                    Debug.Log($"[Farkle] Setting WebGL compression to {compression}, decompression fallback {fallback}");
+                    Debug.Log($"[Base] Setting WebGL compression to {compression}, decompression fallback {fallback}");
                     PlayerSettings.WebGL.compressionFormat = compression;
                     PlayerSettings.WebGL.decompressionFallback = fallback;
                 }
@@ -67,11 +67,11 @@ namespace Farkle.Editor
             var mismatches = PlatformPluginToggler.FindMismatches(platform);
             if (mismatches.Count > 0)
                 throw new BuildFailedException(
-                    $"[Farkle] Native plugins are not configured for platform {platform}:\n  " +
+                    $"[Base] Native plugins are not configured for platform {platform}:\n  " +
                     string.Join("\n  ", mismatches) +
-                    "\nRun menu Farkle/Platform/<platform> before building.");
+                    "\nRun menu Base/Platform/<platform> before building.");
 
-            Debug.Log($"[Farkle] Building platform {platform} for {target}");
+            Debug.Log($"[Base] Building platform {platform} for {target}");
         }
 
         private static List<string> CollectDefines(BuildReport report)

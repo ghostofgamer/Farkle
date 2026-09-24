@@ -3,12 +3,12 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using Farkle.Platform;
+using Base.Platform;
 using UnityEditor;
 using UnityEngine;
 using Debug = UnityEngine.Debug;
 
-namespace Farkle.Editor
+namespace Base.Editor
 {
     /// <summary>
     /// Выкладка сборки Игр ВКонтакте на хостинг VK прямо из Unity, без PowerShell.
@@ -56,7 +56,7 @@ namespace Farkle.Editor
             public int app_id;
         }
 
-        [MenuItem("Farkle/Deploy/VK Games (dev)", priority = 0)]
+        [MenuItem("Base/Deploy/VK Games (dev)", priority = 0)]
         public static void DeployDev()
         {
             if (_process != null)
@@ -67,7 +67,7 @@ namespace Farkle.Editor
 
             if (!File.Exists(Path.Combine(BuildDir, "index.html")))
             {
-                EditorUtility.DisplayDialog("VK deploy", $"Нет сборки в {BuildDir}. Сначала Farkle/Build/VK Games (WebGL).", "OK");
+                EditorUtility.DisplayDialog("VK deploy", $"Нет сборки в {BuildDir}. Сначала Base/Build/VK Games (WebGL).", "OK");
                 return;
             }
 
@@ -135,7 +135,7 @@ namespace Farkle.Editor
             Debug.Log($"[VKDeploy] Uploading {BuildDir} to VK hosting (dev) for app {_appId}...");
         }
 
-        [MenuItem("Farkle/Build/VK Games + Deploy (dev)", priority = 20)]
+        [MenuItem("Base/Build/VK Games + Deploy (dev)", priority = 20)]
         public static void BuildAndDeployDev()
         {
             if (BuildScript.TryBuild(PlatformId.VKGames))

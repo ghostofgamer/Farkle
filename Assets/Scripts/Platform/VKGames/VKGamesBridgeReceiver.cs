@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Farkle.Platform.VKGames
+namespace Base.Platform.VKGames
 {
     /// <summary>
     /// Приёмник сообщений из JavaScript. Имя GameObject и имена методов

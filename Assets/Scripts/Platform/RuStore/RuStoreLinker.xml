@@ -1,6 +1,6 @@
 <linker>
   <!--
-    Подключается только в Android-сборку через Farkle.Editor.PlatformLinkXml.
+    Подключается только в Android-сборку через Base.Editor.PlatformLinkXml.
     Не называть link.xml: такой файл Unity подхватывает во все сборки, и код Яндекса попал бы в WebGL.
 
     Android-часть Яндекс Рекламы построена на AndroidJavaProxy: Java вызывает методы C# по имени,

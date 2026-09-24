@@ -1,4 +1,4 @@
-namespace Farkle.Platform
+namespace Base.Platform
 {
     /// <summary>Целевая площадка, под которую собран билд.</summary>
     public enum PlatformId

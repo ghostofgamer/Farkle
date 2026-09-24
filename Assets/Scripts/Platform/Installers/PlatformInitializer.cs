@@ -1,13 +1,13 @@
 using System;
 using Cysharp.Threading.Tasks;
-using Farkle.Core.Localization;
-using Farkle.Game.Monetization;
-using Farkle.Game.Quality;
-using Farkle.Game.Saves;
+using Base.Core.Localization;
+using Base.Services.Monetization;
+using Base.Services.Quality;
+using Base.Services.Saves;
 using UnityEngine;
 using Zenject;
 
-namespace Farkle.Platform.Installers
+namespace Base.Platform.Installers
 {
     /// <summary>
     /// Запускает инициализацию SDK площадки сразу после сборки контейнера,

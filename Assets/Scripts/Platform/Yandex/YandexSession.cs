@@ -1,4 +1,4 @@
-namespace Farkle.Platform.Yandex
+namespace Base.Platform.Yandex
 {
     /// <summary>
     /// Общее состояние сессии Яндекса: заполняется при инициализации и авторизации,

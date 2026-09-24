@@ -1,4 +1,4 @@
-namespace Farkle.Platform
+namespace Base.Platform
 {
     /// <summary>
     /// Тип устройства игрока. Площадка сообщает его из SDK, по нему игра выбирает качество графики.

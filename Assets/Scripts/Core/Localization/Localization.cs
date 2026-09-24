@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Farkle.Core.Localization
+namespace Base.Core.Localization
 {
     /// <summary>
     /// Простая локализация на словаре в памяти.

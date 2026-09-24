@@ -3,7 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.RuStore
+namespace Base.Platform.RuStore
 {
     /// <summary>
     /// Покупки RuStore. TODO: RuStore Billing SDK для Unity: RuStoreBillingClient.Init,

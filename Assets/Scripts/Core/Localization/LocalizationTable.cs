@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Farkle.Core.Localization
+namespace Base.Core.Localization
 {
     /// <summary>
     /// Тексты интерфейса. Ключ, затем перевод на каждый поддерживаемый язык.

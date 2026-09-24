@@ -1,33 +1,33 @@
 using System.IO;
 using System.Linq;
-using Farkle.Platform;
+using Base.Platform;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
-namespace Farkle.Editor
+namespace Base.Editor
 {
     /// <summary>
     /// Сборка под площадку одной командой: переключает площадку и запускает BuildPipeline.
-    /// Меню Farkle/Build или из командной строки:
-    ///   Unity -batchmode -quit -projectPath . -buildTarget WebGL -executeMethod Farkle.Editor.BuildScript.BuildYandex
-    ///   Unity -batchmode -quit -projectPath . -buildTarget WebGL -executeMethod Farkle.Editor.BuildScript.BuildVKGames
-    ///   Unity -batchmode -quit -projectPath . -buildTarget WebGL -executeMethod Farkle.Editor.BuildScript.BuildVKPlay
-    ///   Unity -batchmode -quit -projectPath . -buildTarget Android -executeMethod Farkle.Editor.BuildScript.BuildRuStore
+    /// Меню Base/Build или из командной строки:
+    ///   Unity -batchmode -quit -projectPath . -buildTarget WebGL -executeMethod Base.Editor.BuildScript.BuildYandex
+    ///   Unity -batchmode -quit -projectPath . -buildTarget WebGL -executeMethod Base.Editor.BuildScript.BuildVKGames
+    ///   Unity -batchmode -quit -projectPath . -buildTarget WebGL -executeMethod Base.Editor.BuildScript.BuildVKPlay
+    ///   Unity -batchmode -quit -projectPath . -buildTarget Android -executeMethod Base.Editor.BuildScript.BuildRuStore
     /// Результат кладётся в Builds/&lt;площадка&gt;.
     /// </summary>
     public static class BuildScript
     {
-        [MenuItem("Farkle/Build/Yandex Games (WebGL)", priority = 0)]
+        [MenuItem("Base/Build/Yandex Games (WebGL)", priority = 0)]
         public static void BuildYandex() => Build(PlatformId.Yandex);
 
-        [MenuItem("Farkle/Build/VK Games (WebGL)", priority = 1)]
+        [MenuItem("Base/Build/VK Games (WebGL)", priority = 1)]
         public static void BuildVKGames() => Build(PlatformId.VKGames);
 
-        [MenuItem("Farkle/Build/VK Play (WebGL)", priority = 2)]
+        [MenuItem("Base/Build/VK Play (WebGL)", priority = 2)]
         public static void BuildVKPlay() => Build(PlatformId.VKPlay);
 
-        [MenuItem("Farkle/Build/RuStore (Android APK)", priority = 3)]
+        [MenuItem("Base/Build/RuStore (Android APK)", priority = 3)]
         public static void BuildRuStore() => Build(PlatformId.RuStore);
 
         /// <summary>Сборка из меню или CLI. В batchmode завершает Unity с кодом результата.</summary>
@@ -47,12 +47,12 @@ namespace Farkle.Editor
             var scenes = EditorBuildSettings.scenes.Where(s => s.enabled).Select(s => s.path).ToArray();
             if (scenes.Length == 0)
             {
-                Debug.LogError("[Farkle] No scenes enabled in Build Settings");
+                Debug.LogError("[Base] No scenes enabled in Build Settings");
                 return false;
             }
 
             var location = target == BuildTarget.Android
-                ? $"Builds/{platform}/Farkle.apk"
+                ? $"Builds/{platform}/{ProjectIdentity.BuildFileName}.apk"
                 : $"Builds/{platform}";
 
             if (target == BuildTarget.Android)
@@ -77,11 +77,11 @@ namespace Farkle.Editor
 
             if (summary.result == BuildResult.Succeeded)
             {
-                Debug.Log($"[Farkle] Build {platform} succeeded: {summary.outputPath} ({summary.totalSize / (1024 * 1024)} MB, {summary.totalTime:mm\\:ss})");
+                Debug.Log($"[Base] Build {platform} succeeded: {summary.outputPath} ({summary.totalSize / (1024 * 1024)} MB, {summary.totalTime:mm\\:ss})");
                 return true;
             }
 
-            Debug.LogError($"[Farkle] Build {platform} finished with {summary.result}: {summary.totalErrors} errors");
+            Debug.LogError($"[Base] Build {platform} finished with {summary.result}: {summary.totalErrors} errors");
             return false;
         }
     }

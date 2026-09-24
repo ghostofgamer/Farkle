@@ -1,20 +1,28 @@
-# Farkle: структура проекта и правила
+# Base: шаблон игр, структура и правила
 
-Базовый проект на Unity 6000.3 (URP) под четыре площадки: Яндекс Игры (WebGL), Игры ВКонтакте (WebGL),
-VK Play (WebGL, раздел браузерных игр), RuStore (Android). Площадка выбирается на этапе сборки.
-Игры ВКонтакте и VK Play это разные площадки с разным API: первая работает через VK Bridge, у второй свой API. С этого проекта начинаются новые игры, поэтому платформенный слой
-не должен зависеть от конкретной игры. Фаркл (кости) будет первой игрой, игровой код сейчас не пишется.
+Шаблон на Unity 6000.3 (URP) для мобильных и казуальных игр под площадки: Яндекс Игры (WebGL),
+Игры ВКонтакте (WebGL, VK Bridge), RuStore (Android). Заготовка VK Play (vkplay.ru, свой API) есть, но площадка не планируется.
+Площадка выбирается на этапе сборки. Каждая новая игра создаётся копией шаблона (GitHub: «Use this template»),
+поэтому всё в `Assets/Scripts` не зависит от конкретной игры и называется нейтрально: `Base.*`.
+
+- **Код шаблона** (`Assets/Scripts`, сборки `Base.*`) в игре не переименовывается. Исправления, сделанные в игре,
+  которые касаются шаблона, переносятся в шаблон, и наоборот.
+- **Код игры** живёт в `Assets/Game/<Название>` со своей сборкой (asmdef) и своим пространством имён.
+  Он ссылается на `Base.Core`, `Base.Services`, `Base.Platform.Abstractions`, UniTask, Zenject. Сборки шаблона
+  на код игры не ссылаются. Сборку игры нужно добавить в `Assets/link.xml` (`preserve="all"`), иначе Zenject
+  в IL2CPP-сборке не создаст её классы.
+- **Что своё у каждой игры**: список в README, раздел «Новая игра из шаблона».
 
 ## Стек и соглашения
 
 - **Async: только UniTask.** Корутины не используются. Все асинхронные методы возвращают `UniTask` / `UniTask<T>`
   и принимают `CancellationToken`. Fire-and-forget только через `.Forget()`.
 - **DI: Zenject (Extenject из Asset Store, лежит в `Assets`, сборка `Zenject`).** Не ставить через OpenUPM или git, чтобы не было двух копий. Зависимости через конструктор. Никаких `FindObjectOfType`, синглтонов и статических сервисов.
-  Единственный `ProjectContext` живёт в `Assets/Resources/ProjectContext.prefab` (создать: меню `Farkle/Setup/Create ProjectContext`).
-- **Площадка выбирается define:** `FARKLE_YANDEX`, `FARKLE_VKGAMES`, `FARKLE_VKPLAY`, `FARKLE_RUSTORE`. Ровно один в билде. Без define работает Stub.
+  Единственный `ProjectContext` живёт в `Assets/Resources/ProjectContext.prefab` (создать: меню `Base/Setup/Create ProjectContext`).
+- **Площадка выбирается define:** `BASE_YANDEX`, `BASE_VKGAMES`, `BASE_VKPLAY`, `BASE_RUSTORE`. Ровно один в билде. Без define работает Stub.
 - **В редакторе всегда Stub**, независимо от define. SDK площадок работают только в реальном билде.
-- Игровой код (Core, Game) работает с площадкой **только через интерфейсы** из `Farkle.Platform.Abstractions`.
-  Прямые ссылки на Yandex/VKGames/VKPlay/RuStore из игрового кода запрещены.
+- Код игры и `Base.Services` работают с площадкой **только через интерфейсы** из `Base.Platform.Abstractions`.
+  Прямые ссылки на Yandex/VKGames/VKPlay/RuStore из кода игры запрещены.
 - **Качество графики** игра получает только через `IQualityService` (уровни Low/Medium/High).
   Уровень выбирается по `IPlatformService.Device` и включает Quality Level Unity с тем же смыслом.
   Что меняется на уровне (URP-ассет, render scale, ужатие текстур), настраивается в Project Settings > Quality, не в коде.
@@ -35,9 +43,9 @@ VK Play (WebGL, раздел браузерных игр), RuStore (Android). П
 ```
 Assets/
   Scripts/
-    Core/                 Farkle.Core.asmdef       чистый C# без UnityEngine: локализация, позже правила игры
+    Core/                 Base.Core.asmdef       чистый C# без UnityEngine: локализация
       Localization/         ILocalization, Localization, LocalizationTable: тексты интерфейса, языки ru и en
-    Game/                 Farkle.Game.asmdef       сцены, UI, презентация; ссылается на Core и Abstractions
+    Services/             Base.Services.asmdef   общий слой игры поверх площадки; ссылается на Core и Abstractions
       Debugging/PlatformTestPanel.cs  отладочная панель: кнопка на каждый метод платформенных интерфейсов, UI строится в коде
       Quality/              IQualityService, QualityService, QualityTier: уровень качества по типу устройства
       Saves/                ISaveStore, SaveStore, ISaveMigration: сохранение по разделам с версиями поверх ICloudSaveService
@@ -49,7 +57,7 @@ Assets/
                             AdPauseController     пауза и звук на время рекламы и при потере фокуса
       GameServicesInstaller.cs  биндинги общего слоя, вызывается из PlatformInstaller
     Platform/
-      Abstractions/       Farkle.Platform.Abstractions.asmdef
+      Abstractions/       Base.Platform.Abstractions.asmdef
                             IPlatformService     жизненный цикл SDK, язык, тип устройства, авторизация, GameReady/GameplayStart/Stop
                             IAdsService          interstitial, rewarded, события AdOpened/AdClosed для паузы и звука
                             IPurchaseService     каталог, покупка, pending-покупки, consume
@@ -57,44 +65,44 @@ Assets/
                             ILeaderboardService  submit, top, запись игрока
                             DeviceKind, DeviceKinds  тип устройства и запасное определение через Unity
                             PlatformId, PlatformDefines
-      Stub/               Farkle.Platform.Stub.asmdef     заглушки: редактор и билды без SDK (PlayerPrefs, мгновенный успех)
-      Yandex/             Farkle.Platform.Yandex.asmdef   define FARKLE_YANDEX, платформы WebGL+Editor
+      Stub/               Base.Platform.Stub.asmdef     заглушки: редактор и билды без SDK (PlayerPrefs, мгновенный успех)
+      Yandex/             Base.Platform.Yandex.asmdef   define BASE_YANDEX, платформы WebGL+Editor
                             YandexBridge          обмен с JS: номер запроса -> UniTaskCompletionSource
                             YandexBridgeReceiver  GameObject "YandexSdkBridge", принимает SendMessage из JS
                             YandexBridgeDto       классы ответов для JsonUtility
                             YandexSession         общее состояние: язык, авторизация, игрок
         Plugins/            YandexBridge.jslib    вызовы Yandex Games SDK
-      VKGames/            Farkle.Platform.VKGames.asmdef  define FARKLE_VKGAMES, платформы WebGL+Editor
+      VKGames/            Base.Platform.VKGames.asmdef  define BASE_VKGAMES, платформы WebGL+Editor
                             VKGamesBridge         обмен с JS по той же схеме, что у Яндекса
                             VKGamesBridgeReceiver GameObject "VKGamesSdkBridge"
                             VKGamesBridgeDto, VKGamesSession
         Plugins/            VKGamesBridge.jslib   вызовы VK Bridge: реклама, хранилище
-      VKPlay/             Farkle.Platform.VKPlay.asmdef   define FARKLE_VKPLAY, заглушки с TODO; площадка не планируется (24.09)
+      VKPlay/             Base.Platform.VKPlay.asmdef   define BASE_VKPLAY, заглушки с TODO; площадка не планируется (24.09)
         Plugins/            .jslib API VK Play (пока пусто)
-      RuStore/            Farkle.Platform.RuStore.asmdef  define FARKLE_RUSTORE, платформы Android+Editor
+      RuStore/            Base.Platform.RuStore.asmdef  define BASE_RUSTORE, платформы Android+Editor
                             RuStoreAdsService    Яндекс Реклама (пакет com.yandex.mobileads), предзагрузка обоих форматов
                             RuStoreAdUnits       идентификаторы рекламных блоков (сейчас демо)
                             RuStoreLinker.xml    защита сборок Яндекса от стриппинга, только в Android-сборке
         Plugins/Android/    .aar SDK RuStore, когда понадобятся (пока пусто)
-      Installers/         Farkle.Platform.Installers.asmdef
+      Installers/         Base.Platform.Installers.asmdef
                             PlatformInstaller    единственное место выбора реализации по define
                             PlatformInitializer  IInitializable, запускает InitializeAsync площадки,
                                                  затем выставляет язык и качество, загружает сохранение,
                                                  затем NotifyGameReady, затем восстанавливает покупки
-    Editor/               Farkle.Editor.asmdef
-                            PlatformSwitcher         меню Farkle/Platform: target, defines, шаблон, плагины
+    Editor/               Base.Editor.asmdef
+                            PlatformSwitcher         меню Base/Platform: target, defines, шаблон, плагины
                             PlatformPluginToggler    включает .jslib/.aar только активной площадки
                             PlatformBuildPreprocessor проверка перед любой сборкой, падает при несоответствии
-                            BuildScript              меню Farkle/Build и CLI-точки входа, результат в Builds/<площадка>
-                            VKGamesDeployer          меню Farkle/Deploy: выкладка Builds/VKGames на хостинг VK (dev)
+                            BuildScript              меню Base/Build и CLI-точки входа, результат в Builds/<площадка>
+                            VKGamesDeployer          меню Base/Deploy: выкладка Builds/VKGames на хостинг VK (dev)
                             ProjectIdentity          имя компании, название, Android-пакет; выставляются при переключении и сборке
                             PlatformLinkXml          дополнительный link.xml только для сборки нужной платформы (Android: RuStoreLinker.xml)
+                            ProjectContextCreator    меню Base/Setup/Create ProjectContext
+                            PlatformTestSceneCreator меню Base/Setup/Create Platform Test Scene, создаёт Scenes/PlatformTest.unity
+                            PlatformTargets          соответствие площадка -> BuildTarget, шаблон, папка плагинов
   Plugins/Android/        mainTemplate.gradle, settingsTemplate.gradle, gradleTemplate.properties: пользовательские
                           gradle-шаблоны Unity. Единственное исключение из запрета Assets/Plugins: Unity ищет их только здесь.
                           Разделы "Android Resolver" в них пишет EDM4U, руками не править
-                            ProjectContextCreator    меню Farkle/Setup/Create ProjectContext
-                            PlatformTestSceneCreator меню Farkle/Setup/Create Platform Test Scene, создаёт Scenes/PlatformTest.unity
-                            PlatformTargets          соответствие площадка -> BuildTarget, шаблон, папка плагинов
   WebGLTemplates/
     Yandex/index.html     шаблон для Яндекс Игр: /sdk.js, YaGames.init() и чтение языка на странице
     VKGames/index.html    шаблон для Игр ВКонтакте: VKWebAppInit и параметры запуска на странице
@@ -106,7 +114,8 @@ Assets/
   Scenes/
     PlatformTest.unity    тестовая сцена с кнопками, первая в Build Settings, пока нет игровых сцен
     SampleScene.unity     остаток шаблона URP
-  link.xml                защита сборок Farkle.* и UniTask от стриппинга
+  link.xml                защита сборок Base.* и UniTask от стриппинга
+  Game/<Название>/       код конкретной игры: своя сборка, свои сцены и ресурсы. В шаблоне папки нет
 Packages/manifest.json    UniTask (git), com.yandex.mobileads 8.4.0 (OpenUPM, тянет EDM4U). Zenject не здесь, а в Assets
                           из Asset Store. Реестр OpenUPM ограничен scope-ами com.yandex.mobileads и com.google.external-dependency-manager
 vk-hosting-config.json    выкладка Builds/VKGames на хостинг VK, ID игры
@@ -114,26 +123,26 @@ vk-hosting-config.json    выкладка Builds/VKGames на хостинг VK
 
 ## Как переключить площадку
 
-Меню `Farkle/Platform/<площадка>`. Скрипт:
+Меню `Base/Platform/<площадка>`. Скрипт:
 1. переключает активный Build Target (WebGL или Android),
-2. ставит define площадки на нужный target и снимает FARKLE_* с остальных,
+2. ставит define площадки на нужный target и снимает BASE_* с остальных,
 3. выставляет WebGL-шаблон (`PROJECT:Yandex` / `PROJECT:VKGames` / `PROJECT:VKPlay`),
 4. выставляет сжатие WebGL под хостинг площадки (Яндекс: Brotli, остальные: gzip + Decompression Fallback),
 5. включает нативные плагины только этой площадки.
 
-`Farkle/Build` перед WebGL-сборкой удаляет папку `Builds/<площадка>`, чтобы на хостинг не уехали старые файлы.
+`Base/Build` перед WebGL-сборкой удаляет папку `Builds/<площадка>`, чтобы на хостинг не уехали старые файлы.
 
-`Farkle/Platform/Show Current` печатает текущее состояние в консоль.
+`Base/Platform/Show Current` печатает текущее состояние в консоль.
 
 ## Как собрать
 
-Меню `Farkle/Build/<площадка>` или CLI:
+Меню `Base/Build/<площадка>` или CLI:
 
 ```
-Unity -batchmode -quit -projectPath . -buildTarget WebGL   -executeMethod Farkle.Editor.BuildScript.BuildYandex
-Unity -batchmode -quit -projectPath . -buildTarget WebGL   -executeMethod Farkle.Editor.BuildScript.BuildVKGames
-Unity -batchmode -quit -projectPath . -buildTarget WebGL   -executeMethod Farkle.Editor.BuildScript.BuildVKPlay
-Unity -batchmode -quit -projectPath . -buildTarget Android -executeMethod Farkle.Editor.BuildScript.BuildRuStore
+Unity -batchmode -quit -projectPath . -buildTarget WebGL   -executeMethod Base.Editor.BuildScript.BuildYandex
+Unity -batchmode -quit -projectPath . -buildTarget WebGL   -executeMethod Base.Editor.BuildScript.BuildVKGames
+Unity -batchmode -quit -projectPath . -buildTarget WebGL   -executeMethod Base.Editor.BuildScript.BuildVKPlay
+Unity -batchmode -quit -projectPath . -buildTarget Android -executeMethod Base.Editor.BuildScript.BuildRuStore
 ```
 
 Сборка через обычное окно Build тоже работает: `PlatformBuildPreprocessor` проверит, что defines, target,
@@ -149,7 +158,7 @@ Unity -batchmode -quit -projectPath . -buildTarget Android -executeMethod Farkle
 3. Заменить TODO-реализации сервисов в `Platform/<площадка>/` на вызовы SDK, сигнатуры интерфейсов не менять.
 4. Для web-площадок раскомментировать подключение SDK в `WebGLTemplates/<площадка>/index.html`.
 5. Android-зависимости версионировать явно (EDM4U или `mainTemplate.gradle`), чтобы конфликты ловились на gradle-резолве.
-6. После добавления запустить `Farkle/Platform/<площадка>`, чтобы плагины получили правильные настройки импорта.
+6. После добавления запустить `Base/Platform/<площадка>`, чтобы плагины получили правильные настройки импорта.
 
 ## Требования модерации Яндекс Игр
 
@@ -201,10 +210,10 @@ Unity -batchmode -quit -projectPath . -buildTarget Android -executeMethod Farkle
 - Модерация VK: основной язык русский, есть выключение звука, обучение с подсказками, канал поддержки.
 - **Выкладка на хостинг VK.** Загрузки архива через сайт, как у Яндекса, у VK нет: только npm-пакет
   `@vkontakte/vk-miniapps-deploy`. Лимит 24 выкладки в сутки, архив до 300 МБ.
-  - Для тестов: меню `Farkle/Build/VK Games + Deploy (dev)` собирает и выкладывает одной кнопкой
+  - Для тестов: меню `Base/Build/VK Games + Deploy (dev)` собирает и выкладывает одной кнопкой
     (`VKGamesDeployer`). Выкладывается только режим разработки: без вопросов и без подтверждения на телефоне.
     Игру видят администраторы, если в «Размещении» стоит галочка «Режим разработки». Готовая сборка
-    выкладывается отдельно через `Farkle/Deploy/VK Games (dev)`.
+    выкладывается отдельно через `Base/Deploy/VK Games (dev)`.
   - Вход в VK нужен один раз: `npx @vkontakte/vk-miniapps-deploy` в PowerShell из корня проекта, открыть ссылку.
     Токен хранится у пользователя (configstore), в проект не попадает. Если Unity сообщит, что нужен вход, повторить.
   - Прод (перед модерацией) выкладывается вручную той же командой из PowerShell: он требует подтверждения с телефона.
@@ -258,4 +267,4 @@ Unity -batchmode -quit -projectPath . -buildTarget Android -executeMethod Farkle
 ## Что не трогать
 
 - `Assets/TutorialInfo`, `Assets/Readme.asset`: остатки шаблона Unity, удалить при первой чистке.
-- `Far.sln`: дубликат `Farkle.sln`, можно удалить.
+- `Far.sln`: дубликат, можно удалить. Файлы `.sln` и `.csproj` Unity создаёт сам по имени папки проекта.

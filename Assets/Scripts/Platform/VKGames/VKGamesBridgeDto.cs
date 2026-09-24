@@ -1,6 +1,6 @@
 using System;
 
-namespace Farkle.Platform.VKGames
+namespace Base.Platform.VKGames
 {
     /// <summary>
     /// Классы для разбора ответов моста через JsonUtility.

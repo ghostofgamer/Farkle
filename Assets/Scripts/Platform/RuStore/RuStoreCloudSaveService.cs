@@ -2,7 +2,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Farkle.Platform.RuStore
+namespace Base.Platform.RuStore
 {
     /// <summary>
     /// У RuStore нет облачных сохранений. Пока сохраняем локально в PlayerPrefs.
@@ -10,7 +10,7 @@ namespace Farkle.Platform.RuStore
     /// </summary>
     public sealed class RuStoreCloudSaveService : ICloudSaveService
     {
-        private const string Key = "farkle.save";
+        private const string Key = "base.save";
 
         public bool IsAvailable => true;
 

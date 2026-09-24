@@ -1,6 +1,6 @@
 using System;
 
-namespace Farkle.Core.Localization
+namespace Base.Core.Localization
 {
     /// <summary>
     /// Язык интерфейса. Определяется автоматически по языку из SDK площадки,

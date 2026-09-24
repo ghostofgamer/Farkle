@@ -7,7 +7,7 @@ mergeInto(LibraryManager.library, {
 
   $YandexBridge: {
     RECEIVER: 'YandexSdkBridge',
-    SAVE_KEY: 'farkle_save',
+    SAVE_KEY: 'base_save',
 
     sdk: null,
     player: null,
